@@ -1,6 +1,7 @@
 node_modules/
 models/
 projects/
+releases/
 *.gguf
 .DS_Store
 NUL
