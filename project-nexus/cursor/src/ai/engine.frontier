@@ -1,0 +1,100 @@
+// cursor/src/ai/engine.frontier
+// Frontier's native AI — understands itself
+// Project Nexus · Slide 15 · 100% Frontier Native (zero external AI runtimes)
+// Backed by frontier/ai/{neural_engine,language_model,applications}.frontier
+
+component AIEngine {
+    model: FrontierLM,          // Pure Frontier LM — never external APIs
+    apps: FrontierAI,           // Pure Frontier application layer
+    context: String,
+    tokenCache: TokenCache,
+
+    static new() -> AIEngine {
+        NativeAIPolicy.assert_native();
+        return AIEngine {
+            model: FrontierLM.load("frontier/models/frontier-lm.native"),
+            apps: FrontierAI.new(),
+            context: "",
+            tokenCache: TokenCache.new(),
+        };
+    },
+
+    // Generate code from natural language prompt — Frontier writes Frontier
+    generate(prompt: String, context: String, style: String) -> String {
+        // Route through Frontier-native LM (never cloud completion APIs)
+        let code = this.apps.generate_code(prompt, context);
+
+        if style.contains("optimized") {
+            code = FrontierOptimizer.optimize(code);
+        }
+
+        if style.contains("ARC-verified") {
+            let arc = ARCChecker.verify(code);
+            if arc.hasViolations() {
+                code = this.fixARCViolations(code, arc.violations);
+            }
+        }
+
+        return code;
+    },
+
+    generateDetailed(prompt: String, context: String, style: String) -> AIResponse {
+        let code = this.generate(prompt, context, style);
+        return AIResponse {
+            explanation: "Generated ARC-verified Frontier code for: " + prompt,
+            code: code,
+            shouldApply: style.contains("complete"),
+        };
+    },
+
+    tokenize(input: String) -> Vec<TokenId> {
+        // Frontier-native BPE tokenizer
+        return this.model.tokenizer.encode(input).map(|t| TokenId(t));
+    },
+
+    decode(tokens: Vec<TokenId>) -> String {
+        return this.model.tokenizer.decode(tokens.map(|t| t.0));
+    },
+
+    fixARCViolations(code: String, violations: Vec<ARCViolation>) -> String {
+        let fixed = code;
+        for v in violations {
+            fixed = FRONTIER_FIXES.apply(fixed, v);
+        }
+        return fixed;
+    },
+
+    optimize(code: String) -> String {
+        let suggestions = this.apps.suggest_optimizations(code);
+        let ast = FrontierParser.parse(code);
+        let optimized = FrontierOptimizer.run(ast);
+        // Apply FrontierAI suggestions when beneficial
+        for s in suggestions {
+            optimized = FrontierOptimizer.apply(optimized, s);
+        }
+        return FrontierGenerator.generate(optimized);
+    },
+
+    review(code: String) -> ReviewReport {
+        return this.apps.review_code(code);
+    },
+
+    understand(prompt: String) -> FrontierProgram {
+        return this.apps.understand(prompt);
+    },
+
+    parseIntent(prompt: String) -> Intent {
+        return this.apps.parse_intent(prompt);
+    },
+
+    generateFromIntent(intent: Intent) -> FrontierProgram {
+        return this.apps.generate_from_intent(intent);
+    },
+
+    predict(context: String) -> String {
+        let tokens = this.model.tokenizer.encode(context);
+        let logits = this.model.transformer.forward(tokens, None);
+        let next = Tensor.argmax(logits.last_row());
+        return this.model.tokenizer.decode([next]);
+    }
+}

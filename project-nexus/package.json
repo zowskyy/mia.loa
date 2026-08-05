@@ -1,0 +1,26 @@
+{
+  "name": "project-nexus",
+  "version": "0.1.0",
+  "description": "Project Nexus — Cursor IDE written entirely in Frontier Syntax",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zowskyy/project-nexus"
+  },
+  "scripts": {
+    "verify": "python3 build/arc_orchestrator.py --slides 15",
+    "benchmark": "python3 build/arc_orchestrator.py --benchmark spirits_within",
+    "purge": "python3 build/arc_orchestrator.py --patch purge-third-party",
+    "native-ai": "python3 build/arc_orchestrator.py --slides 15.9,15.10,15.11,15.12",
+    "test": "python3 -m unittest discover -s tests -v",
+    "orchestrate": "python3 build/arc_orchestrator.py --slides 15"
+  },
+  "frontier": {
+    "ide": "cursor/",
+    "entry": "cursor/src/app.frontier",
+    "gates": "gates/slide_15_gates.json"
+  },
+  "engines": {
+    "python": ">=3.10"
+  }
+}

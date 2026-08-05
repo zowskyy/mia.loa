@@ -1,0 +1,98 @@
+// benchmark/spirits_within/scene.frontier
+// Complete Cinematic Scene — Spirits Within Benchmark
+// Project Nexus · ARC A+ Hard Gate
+
+component CinematicScene {
+    state: {
+        characters: [PhotorealisticCharacter],
+        environment: Environment,
+        lights: [Light],
+        particles: ParticleSystem,
+        cameras: [Camera],
+        currentCamera: usize,
+        timeline: Timeline,
+        fogDensity: f32,
+        directionalLight: Light,
+        objects: [Object],
+        buildTimeMs: f32,
+    },
+
+    static build() -> CinematicScene {
+        let start = time;
+
+        let scene = CinematicScene {
+            characters: [
+                PhotorealisticCharacter.load("assets/aegis.gltf"),
+                PhotorealisticCharacter.load("assets/dr_sid.gltf"),
+                PhotorealisticCharacter.load("assets/akihiro.gltf"),
+            ],
+            environment: Environment.load("assets/zeus_canyon.env"),
+            lights: [
+                DirectionalLight(angle: (45, 30), intensity: 1.0),
+                DirectionalLight(angle: (-30, -15), intensity: 0.3),
+                PointLight(position: (10, 5, 0), intensity: 0.5),
+            ],
+            particles: ParticleSystem.load("assets/dust.particles"),
+            cameras: [
+                Camera.lookAt((0, 2, 5), (0, 1.5, 0)),
+                Camera.lookAt((2, 1, 4), (0, 1.5, 0)),
+                Camera.lookAt((-2, 3, 6), (0, 1.5, 0)),
+            ],
+            currentCamera: 0,
+            timeline: Timeline.new(),
+            fogDensity: 0.02,
+            directionalLight: DirectionalLight(angle: (45, 30), intensity: 1.0),
+            objects: [],
+            buildTimeMs: 0.0,
+        };
+
+        scene.objects = scene.characters.map(|c| c.asObject());
+        scene.buildTimeMs = time - start;
+
+        // ARC Gate: Scene builds in < 5 seconds
+        assert(scene.buildTimeMs < 5000.0);
+        assert(scene.characters.len() >= 3);
+
+        return scene;
+    },
+
+    render(ctx: RenderContext) {
+        // Update timeline
+        this.timeline.update(time);
+
+        // Animate characters
+        for char in this.characters {
+            let expression = this.timeline.getExpression(char.id);
+            let emotion = this.timeline.getEmotion(char.id);
+            char.animate(expression, emotion);
+        }
+
+        // Render environment (terrain + sky)
+        this.environment.render(ctx);
+
+        // Render particles (dust, atmosphere)
+        this.particles.render(ctx);
+
+        // Render characters
+        for char in this.characters {
+            char.render(ctx);
+        }
+
+        // Volumetric effects
+        VolumetricRenderer.renderFog(ctx, this);
+        VolumetricRenderer.renderGodRays(ctx, this.lights[0]);
+
+        // Post-processing
+        PostProcess.tonemap(ctx.framebuffer);
+        PostProcess.bloom(ctx.framebuffer);
+        PostProcess.depthOfField(ctx.framebuffer, ctx.camera);
+
+        // ARC Gate: Must be < 16.6ms
+        assert(ctx.frameTime < 16.6);
+    },
+
+    switchCamera(index: usize) {
+        this.currentCamera = index;
+        this.cameras[index].activate();
+    }
+}

@@ -1,0 +1,93 @@
+// benchmark/spirits_within/character.frontier
+// Photorealistic Character Pipeline — Spirits Within Benchmark
+// Project Nexus · ARC A+ Hard Gate
+
+component PhotorealisticCharacter {
+    state: {
+        mesh: MeshData,
+        textures: TextureSet,
+        skeleton: Skeleton,
+        animation: AnimationState,
+        skinning: SkinningData,
+        expression: ExpressionMap,
+        lod: LODLevel,
+        position: Vector3,
+        id: String,
+        loadTimeMs: f32,
+        memoryMb: f32,
+    },
+
+    static load(path: Path) -> PhotorealisticCharacter {
+        let start = time;
+
+        // Load all assets — high-poly mesh (100k+ triangles) via GLTF
+        let mesh = GltfLoader.load(path + "/mesh.gltf");
+        let textures = TextureLoader.load(path + "/textures/");
+        // Texture set: Albedo, Normal, Roughness, Metallic, SSS
+        textures.require(["albedo", "normal", "roughness", "metallic", "sss"]);
+        let skeleton = SkeletonLoader.load(path + "/skeleton.skel");
+
+        // Optimize mesh for GPU
+        let optimized = GPU.optimizeMesh(mesh);
+        assert(optimized.triangleCount >= 100_000);
+
+        let elapsed = time - start;
+        assert(elapsed < 2000.0); // ARC Gate: Character loads in < 2 seconds
+
+        return PhotorealisticCharacter {
+            mesh: optimized,
+            textures: textures,
+            skeleton: skeleton,
+            animation: AnimationState.idle(),
+            skinning: SkinningData.new(),
+            expression: ExpressionMap.new(),
+            lod: LOD0,
+            position: Vector3.zero(),
+            id: path.basename(),
+            loadTimeMs: elapsed,
+            memoryMb: optimized.memoryMb + textures.memoryMb,
+        };
+    },
+
+    render(ctx: RenderContext) {
+        // GPU skinning (compute shader)
+        let skinned = GPU.skin(
+            this.mesh.vertices,
+            this.skeleton.pose,
+            this.skinning.weights
+        );
+
+        // Morph targets for facial expressions
+        let morphed = GPU.morph(
+            skinned,
+            this.expression.targets
+        );
+
+        // PBR + Subsurface Scattering shader
+        let material = this.textures.toMaterial();
+        material.subsurfaceScattering = true;
+        material.skinShader = true;
+
+        Renderer.draw(morphed, material, ctx.camera);
+
+        // ARC Gate: Must be < 16.6ms
+        assert(ctx.frameTime < 16.6);
+    },
+
+    animate(expression: String, emotion: String) {
+        let target = AIEngine.expressionMap(emotion);
+        this.expression.blendTo(target, 0.5);
+        this.skeleton.pose = AnimationSystem.blend(
+            this.skeleton.idle,
+            this.skeleton.walk,
+            this.animation.speed
+        );
+        // Apply named expression morph weights
+        this.expression.applyNamed(expression);
+    },
+
+    setLOD(level: LODLevel) {
+        this.lod = level;
+        this.mesh = this.mesh.forLOD(level);
+    }
+}

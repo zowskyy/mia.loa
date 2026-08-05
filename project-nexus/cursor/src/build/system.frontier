@@ -1,0 +1,56 @@
+// cursor/src/build/system.frontier
+// Build System (Frontier → Native)
+// Project Nexus · Slide 15 · ARC A+ Hard Gate
+
+component BuildSystem {
+    state: {
+        project: Project,
+        lastBuild: Option<BuildResult>,
+        watchers: Vec<FileWatcher>,
+        incremental: bool,
+    },
+
+    // Hot-reload — Instant feedback (< 100ms gate)
+    hotReload(changed: Path) -> BuildResult {
+        let start = time;
+        let unit = this.project.unit_for(changed);
+        let result = FrontierCompiler.compile_incremental(unit, this.lastBuild);
+        let elapsed = time - start;
+
+        assert(elapsed < 100.0); // Hot-reload gate: < 100ms
+
+        if result.ok {
+            Runtime.reload(result.binary);
+            this.lastBuild = Some(result);
+        }
+        return result;
+    },
+
+    // Incremental compilation — Seconds, not minutes
+    compile() -> BuildResult {
+        let start = time;
+        let result = if this.incremental && this.lastBuild.is_some() {
+            FrontierCompiler.compile_incremental(this.project.root, this.lastBuild)
+        } else {
+            FrontierCompiler.compile_all(this.project.root)
+        };
+        let elapsed = time - start;
+        result.compile_ms = elapsed;
+        this.lastBuild = Some(result);
+        return result;
+    },
+
+    // Deployment — Package for distribution (< 50MB gate)
+    package() -> Package {
+        let binary = this.compile();
+        let pkg = Packager.bundle(binary, assets: this.project.assets);
+        assert(pkg.size_mb < 50.0); // Size gate: < 50MB
+        return pkg;
+    },
+
+    watch() {
+        this.watchers = FileWatcher.watch(this.project.root, |path| {
+            this.hotReload(path);
+        });
+    }
+}

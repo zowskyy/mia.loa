@@ -1,0 +1,62 @@
+// cursor/src/lsp/services.frontier
+// Language Services (Frontier LSP)
+// Project Nexus · Slide 15 · ARC A+ Hard Gate
+
+component FrontierLSP {
+    state: {
+        documents: HashMap<Path, Document>,
+        symbols: SymbolTable,
+        workspace: Path,
+    },
+
+    // Parser — Real-time AST
+    parse(source: String) -> AST {
+        return FrontierParser.parse(source);
+    },
+
+    // Resolver — Symbol table
+    resolve(ast: AST) -> SymbolTable {
+        this.symbols = SymbolResolver.resolve(ast);
+        return this.symbols;
+    },
+
+    // Completions — Intelligent suggestions
+    completions(uri: Path, position: (usize, usize)) -> Vec<Completion> {
+        let doc = this.documents[uri];
+        let ast = this.parse(doc.text);
+        this.resolve(ast);
+        return CompletionEngine.suggest(ast, this.symbols, position);
+    },
+
+    // Diagnostics — Live errors/warnings
+    diagnostics(uri: Path) -> Vec<Diagnostic> {
+        let doc = this.documents[uri];
+        let ast = this.parse(doc.text);
+        return FrontierDiagnostics.check(ast);
+    },
+
+    // Code Actions — Refactoring, fixes
+    codeActions(uri: Path, range: Range) -> Vec<CodeAction> {
+        let diags = this.diagnostics(uri);
+        let actions: Vec<CodeAction> = [];
+        for d in diags {
+            if d.range.overlaps(range) {
+                actions.push(CodeAction::from_diagnostic(d));
+            }
+        }
+        actions.extend(RefactorEngine.suggest(uri, range));
+        return actions;
+    },
+
+    didOpen(uri: Path, text: String) {
+        this.documents[uri] = Document { text: text, version: 1 };
+    },
+
+    didChange(uri: Path, text: String, version: usize) {
+        this.documents[uri] = Document { text: text, version: version };
+    },
+
+    didClose(uri: Path) {
+        this.documents.remove(uri);
+    }
+}

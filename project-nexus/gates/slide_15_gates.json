@@ -1,0 +1,82 @@
+{
+  "slide": 15,
+  "title": "CURSOR IDE — COMPLETE FRONTIER IMPLEMENTATION",
+  "protocol": "A+ Hard Gate Protocol v1.0",
+  "description": "Self-hosted AI-native Cursor IDE written entirely in Frontier Syntax",
+  "architecture": {
+    "ui_layer": ["Editor Canvas", "File Explorer", "Terminal", "AI Chat Panel"],
+    "language_services": ["Parser", "Resolver", "Completions", "Diagnostics", "Code Actions"],
+    "ai_engine": ["Code generation", "Code review", "Optimization", "NL → Frontier"],
+    "build_system": ["Hot-reload", "Incremental compilation", "Deployment"]
+  },
+  "gates": [
+    {
+      "id": "performance",
+      "name": "Performance",
+      "target": "≥ 60 FPS UI",
+      "implementation": "GPU-accelerated rendering, incremental updates",
+      "status": "required"
+    },
+    {
+      "id": "memory",
+      "name": "Memory",
+      "target": "< 200MB",
+      "implementation": "Frontier → compact binary, no GC overhead",
+      "status": "required"
+    },
+    {
+      "id": "ai_accuracy",
+      "name": "AI Accuracy",
+      "target": "> 90%",
+      "implementation": "Frontier understands its own syntax",
+      "status": "required"
+    },
+    {
+      "id": "hot_reload",
+      "name": "Hot-Reload",
+      "target": "< 100ms",
+      "implementation": "Incremental compilation, live updates",
+      "status": "required"
+    },
+    {
+      "id": "self_hosting",
+      "name": "Self-Hosting",
+      "target": "Runs on Frontier / entirely .frontier",
+      "implementation": "Entirely written in Frontier",
+      "status": "required"
+    },
+    {
+      "id": "visual_quality",
+      "name": "Visual Quality",
+      "target": "Sub-pixel rendering",
+      "implementation": "GPU-accelerated text + smooth fonts",
+      "status": "required"
+    },
+    {
+      "id": "size",
+      "name": "Size",
+      "target": "< 50MB",
+      "implementation": "Frontier compiled to native code",
+      "status": "required"
+    },
+    {
+      "id": "response_time",
+      "name": "Response Time",
+      "target": "< 10ms for AI",
+      "implementation": "Embedded model, no network calls",
+      "status": "required"
+    }
+  ],
+  "package_budget_mb": {
+    "nexus_engine": 87,
+    "frontier_language": 2,
+    "frontier_compiler": 3,
+    "frontier_cli": 1,
+    "frontier_lsp": 2,
+    "vscode_extension": 0.1,
+    "web_playground": 0.5,
+    "package_manager": 1,
+    "cursor_ide": 42,
+    "total": 139
+  }
+}

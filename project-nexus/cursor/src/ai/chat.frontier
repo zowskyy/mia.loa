@@ -1,0 +1,80 @@
+// cursor/src/ai/chat.frontier
+// AI Chat Panel — Frontier understands and writes Frontier
+// Project Nexus · Slide 15 · ARC A+ Hard Gate
+
+component AIChat {
+    state: {
+        messages: Vec<Message>,
+        input: String,
+        isThinking: bool,
+    },
+
+    render(ctx: RenderContext) {
+        let y = 0;
+        for message in this.messages {
+            let color = message.role == "user" ? (100, 149, 237) : (0, 255, 0);
+            let prefix = message.role == "user" ? "👤 " : "🤖 ";
+            drawText(prefix + message.content, 0, y, color);
+            y += ctx.line_height;
+
+            if message.code && message.role == "assistant" {
+                // Render code block with syntax highlighting
+                let code_lines = message.code.split("\n");
+                for line in code_lines {
+                    drawText("  " + line, 20, y, (200, 200, 100));
+                    y += ctx.line_height;
+                }
+            }
+        }
+
+        // Input
+        if this.isThinking {
+            drawText("🤖 Thinking...", 0, y, (255, 255, 0));
+        } else {
+            drawText("> " + this.input, 0, y, (255, 255, 255));
+        }
+    },
+
+    onKey(key: Key) {
+        match key {
+            Key::Character(c) => {
+                this.input += c;
+            },
+            Key::Enter => {
+                this.send(this.input);
+                this.input = "";
+            },
+            Key::Backspace => {
+                if this.input.len() > 0 {
+                    this.input = this.input.slice(0, this.input.len() - 1);
+                }
+            },
+            _ => {},
+        }
+    },
+
+    send(message: String) {
+        this.messages.push(Message { role: "user", content: message, code: None });
+        this.isThinking = true;
+
+        // Generate response using Frontier AI
+        let response = AIEngine.generateDetailed(
+            message,
+            context: Editor.getContext(),
+            style: "ARC-verified, optimized, complete"
+        );
+
+        this.messages.push(Message {
+            role: "assistant",
+            content: response.explanation,
+            code: Some(response.code),
+        });
+
+        // Apply generated code to editor
+        if response.shouldApply {
+            Editor.insert(response.code);
+        }
+
+        this.isThinking = false;
+    }
+}

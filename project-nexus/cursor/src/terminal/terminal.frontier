@@ -1,0 +1,100 @@
+// cursor/src/terminal/terminal.frontier
+// Integrated Terminal — Frontier CLI + shell
+// Project Nexus · Slide 15 · ARC A+ Hard Gate
+
+component Terminal {
+    state: {
+        buffer: RingBuffer<String>,
+        input: String,
+        cursor: usize,
+        history: Vec<String>,
+        history_index: usize,
+        process: Process,
+        working_dir: Path,
+    },
+
+    render(ctx: RenderContext) {
+        let y = 0;
+        for line in this.buffer.lines() {
+            drawText(line, 0, y, (180, 180, 180));
+            y += ctx.line_height;
+        }
+
+        // Input line
+        drawText("$ " + this.input, 0, y, (0, 255, 0));
+        drawRect(this.input.len() * ctx.char_width, y, 2, ctx.line_height, (0, 255, 0));
+    },
+
+    onKey(key: Key) {
+        match key {
+            Key::Character(c) => {
+                this.input.insert(this.cursor, c);
+                this.cursor += 1;
+            },
+            Key::Enter => {
+                let command = this.input;
+                this.buffer.push("$ " + command);
+                this.execute(command);
+                this.input = "";
+                this.cursor = 0;
+            },
+            Key::ArrowUp => {
+                if this.history_index > 0 {
+                    this.history_index -= 1;
+                    this.input = this.history[this.history_index];
+                    this.cursor = this.input.len();
+                }
+            },
+            Key::ArrowDown => {
+                if this.history_index < this.history.len() - 1 {
+                    this.history_index += 1;
+                    this.input = this.history[this.history_index];
+                    this.cursor = this.input.len();
+                }
+            },
+            Key::Backspace => {
+                if this.cursor > 0 {
+                    this.input.remove(this.cursor - 1);
+                    this.cursor -= 1;
+                }
+            },
+            _ => {},
+        }
+    },
+
+    execute(command: String) {
+        // Built-in commands
+        if command.starts_with("frontier ") {
+            let args = command.slice(9).split(" ");
+            let result = FrontierCLI.run(args);
+            this.buffer.push(result.output);
+        } else if command == "run" {
+            // Run current project
+            let project = Project.load(this.working_dir);
+            let result = project.build();
+            this.buffer.push(result.output);
+        } else if command == "test" {
+            let results = FrontierTest.runAll(this.working_dir);
+            for result in results {
+                this.buffer.push(result.message);
+            }
+        } else if command == "clean" {
+            Project.clean(this.working_dir);
+            this.buffer.push("Cleaned build artifacts");
+        } else if command == "help" {
+            this.buffer.push("Commands:");
+            this.buffer.push("  frontier compile <file>");
+            this.buffer.push("  frontier run");
+            this.buffer.push("  frontier test");
+            this.buffer.push("  frontier add <package>");
+            this.buffer.push("  clean");
+        } else {
+            // External command — run in shell
+            let process = Shell.exec(command, this.working_dir);
+            this.buffer.push(process.stdout);
+        }
+
+        this.history.push(command);
+        this.history_index = this.history.len();
+    }
+}

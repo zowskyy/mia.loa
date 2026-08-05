@@ -1,0 +1,90 @@
+{
+  "benchmark": "spirits_within",
+  "title": "Spirits Within Benchmark — Film-Quality Real-Time",
+  "protocol": "A+ Hard Gate Protocol v1.0",
+  "comparison": {
+    "final_fantasy_tsw_2001": {
+      "render_time": "90 min",
+      "hardware": "960 CPUs",
+      "storage": "15 TB",
+      "cost": "$137M",
+      "team": "200 artists",
+      "interactivity": "None"
+    },
+    "frontier_now": {
+      "render_time": "16.6ms",
+      "hardware": "1 GPU",
+      "storage": "1.8 GB",
+      "cost": "$1M",
+      "team": "1 developer",
+      "interactivity": "60 FPS Real-time"
+    },
+    "speedup": "324000x"
+  },
+  "scripts": [
+    {
+      "id": 1,
+      "name": "Character Pipeline",
+      "files": ["character.frontier", "materials.frontier"],
+      "gates": [
+        {"id": "load_time", "target": "< 2s", "name": "Character Load"},
+        {"id": "render_time", "target": "< 16.6ms", "name": "Character Render"},
+        {"id": "memory", "target": "< 500MB", "name": "Per-Character Memory"},
+        {"id": "fps", "target": "≥ 60", "name": "Character FPS"},
+        {"id": "material_eval", "target": "< 1ms", "name": "Material Evaluation"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Volumetric Lighting",
+      "files": ["volumetrics.frontier"],
+      "gates": [
+        {"id": "fog", "target": "< 5ms", "name": "Fog Render"},
+        {"id": "god_rays", "target": "< 5ms", "name": "God Rays"},
+        {"id": "atmosphere", "target": "< 1ms", "name": "Atmospheric Scattering"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Facial Animation & Lip Sync",
+      "files": ["facial.frontier", "lip_sync.frontier"],
+      "gates": [
+        {"id": "expression", "target": "< 1ms", "name": "Expression Update"},
+        {"id": "lip_sync", "target": "< 1ms", "name": "Lip Sync"},
+        {"id": "emotion", "target": "verified", "name": "Emotion Mapping"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Complete Cinematic Scene",
+      "files": ["scene.frontier"],
+      "gates": [
+        {"id": "build", "target": "< 5s", "name": "Scene Build"},
+        {"id": "scene_fps", "target": "≥ 60", "name": "Full Scene FPS"},
+        {"id": "scene_render", "target": "< 16.6ms", "name": "Scene Render"},
+        {"id": "characters", "target": "≥ 3", "name": "Characters Animated"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Optimization Engine",
+      "files": ["optimization.frontier"],
+      "gates": [
+        {"id": "lod", "target": "functional", "name": "LOD Switching"},
+        {"id": "adaptive", "target": "maintains 60 FPS", "name": "Adaptive Resolution"},
+        {"id": "overhead", "target": "< 1ms", "name": "Optimization Overhead"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Complete Benchmark Suite",
+      "files": ["benchmark.frontier"],
+      "gates": [
+        {"id": "all_tests", "target": "pass", "name": "All Tests"},
+        {"id": "suite_time", "target": "< 60s", "name": "Suite Duration"},
+        {"id": "memory_total", "target": "< 2GB", "name": "Total Memory"},
+        {"id": "ai", "target": "< 100ms", "name": "AI Response"}
+      ]
+    }
+  ]
+}
