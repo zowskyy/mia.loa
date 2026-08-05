@@ -2,11 +2,13 @@
 """
 Project Nexus — ARC Orchestrator
 Builds and verifies Cursor IDE (Frontier) via slide-gated A+ Hard Gate Protocol.
+Also runs Spirits Within film-quality real-time benchmark.
 
 Usage:
-    python build/arc_orchestrator.py --slides 15
-    python build/arc_orchestrator.py --slides all
-    python build/arc_orchestrator.py --list
+    python3 build/arc_orchestrator.py --slides 15
+    python3 build/arc_orchestrator.py --slides all
+    python3 build/arc_orchestrator.py --benchmark spirits_within
+    python3 build/arc_orchestrator.py --list
 """
 
 from __future__ import annotations
@@ -24,6 +26,10 @@ ROOT = Path(__file__).resolve().parents[1]
 CURSOR_SRC = ROOT / "cursor" / "src"
 GATES_PATH = ROOT / "gates" / "slide_15_gates.json"
 REPORTS_DIR = ROOT / "audit_reports"
+
+# Ensure build/ is importable for benchmark modules
+if str(ROOT / "build") not in sys.path:
+    sys.path.insert(0, str(ROOT / "build"))
 
 
 @dataclass
@@ -332,22 +338,65 @@ def write_report(report: SlideReport) -> Path:
     return out
 
 
+BENCHMARKS = {
+    "spirits_within": "Spirits Within — film-quality real-time benchmark",
+}
+
+
+def run_benchmark(name: str) -> int:
+    if name not in BENCHMARKS:
+        print(f"Unknown benchmark: {name}", file=sys.stderr)
+        print(f"Available: {', '.join(BENCHMARKS)}", file=sys.stderr)
+        return 1
+
+    if name == "spirits_within":
+        from spirits_within_benchmark import (
+            print_benchmark_report,
+            run_spirits_within,
+            write_benchmark_report,
+        )
+
+        report = run_spirits_within()
+        print_benchmark_report(report)
+        path = write_benchmark_report(report)
+        print(f"Report written: {path}")
+        return 0 if report.passed else 1
+
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Project Nexus ARC Orchestrator")
-    parser.add_argument("--slides", default="15", help="Slide number, comma list, or 'all'")
-    parser.add_argument("--list", action="store_true", help="List available slides")
+    parser.add_argument("--slides", default=None, help="Slide number, comma list, or 'all'")
+    parser.add_argument(
+        "--benchmark",
+        default=None,
+        help="Benchmark name (e.g. spirits_within)",
+    )
+    parser.add_argument("--list", action="store_true", help="List available slides and benchmarks")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable summary")
     args = parser.parse_args(argv)
 
     if args.list:
+        print("Slides:")
         for num, (title, _) in sorted(SLIDES.items()):
             print(f"  {num}: {title}")
+        print("Benchmarks:")
+        for name, title in sorted(BENCHMARKS.items()):
+            print(f"  {name}: {title}")
         return 0
 
-    if args.slides.strip().lower() == "all":
+    # Benchmark mode takes precedence when specified
+    if args.benchmark:
+        return run_benchmark(args.benchmark.strip().lower())
+
+    # Default to slide 15 when neither flag provided (back-compat)
+    slides_arg = args.slides if args.slides is not None else "15"
+
+    if slides_arg.strip().lower() == "all":
         selected = sorted(SLIDES.keys())
     else:
-        selected = [int(x.strip()) for x in args.slides.split(",")]
+        selected = [int(x.strip()) for x in slides_arg.split(",")]
 
     exit_code = 0
     summaries = []

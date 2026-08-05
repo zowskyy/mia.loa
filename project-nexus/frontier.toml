@@ -21,6 +21,11 @@ app = "cursor/src/app.frontier"
 slide = 15
 manifest = "gates/slide_15_gates.json"
 orchestrator = "build/arc_orchestrator.py"
+spirits_within = "gates/spirits_within_gates.json"
+
+[benchmarks]
+spirits_within = "benchmark/spirits_within/"
+
 
 [dependencies]
 frontier-syntax = { git = "https://github.com/zowskyy/frontier-syntax", optional = true }

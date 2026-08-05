@@ -16,6 +16,8 @@ jobs:
           python-version: "3.12"
       - name: Run Slide 15 orchestrator
         run: python3 build/arc_orchestrator.py --slides 15
+      - name: Run Spirits Within benchmark
+        run: python3 build/arc_orchestrator.py --benchmark spirits_within
       - name: Unit tests
         run: python3 -m unittest discover -s tests -v
       - name: Upload audit reports

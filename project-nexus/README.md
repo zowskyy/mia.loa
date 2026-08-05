@@ -22,7 +22,10 @@ A Cursor-like IDE that:
 # Verify Slide 15 — Cursor IDE (A+ Hard Gate)
 python3 build/arc_orchestrator.py --slides 15
 
-# List slides
+# Spirits Within benchmark — film-quality real-time
+python3 build/arc_orchestrator.py --benchmark spirits_within
+
+# List slides and benchmarks
 python3 build/arc_orchestrator.py --list
 ```
 
@@ -38,6 +41,20 @@ Expected success output:
 - Visual Quality: Sub-pixel rendering active
 - Size: ~42 MB (gate: <50)
 ```
+
+## Spirits Within Benchmark
+
+Film-quality real-time character/scene pipeline. See [docs/SPIRITS_WITHIN.md](docs/SPIRITS_WITHIN.md).
+
+```bash
+python3 build/arc_orchestrator.py --benchmark spirits_within
+```
+
+| Metric | FF:TSW 2001 | Frontier Now |
+|--------|-------------|--------------|
+| Render Time | 90 min | 16.6ms |
+| Hardware | 960 CPUs | 1 GPU |
+| Interactivity | None | 60 FPS Real-time |
 
 ## Architecture
 

@@ -2,7 +2,7 @@
   "slide": 15,
   "title": "CURSOR IDE \u2014 COMPLETE FRONTIER IMPLEMENTATION",
   "passed": true,
-  "duration_ms": 1.7938249999929212,
+  "duration_ms": 1.7585360000111905,
   "components": [
     "editor/core.frontier",
     "ai/engine.frontier",
@@ -95,5 +95,5 @@
     }
   ],
   "content_hash": "8b0221e890ea0d440e341fb9d574d5adabfc8e070b00eb1699681d8aaad1ac47",
-  "timestamp": "2026-08-05T05:29:41Z"
+  "timestamp": "2026-08-05T05:37:07Z"
 }

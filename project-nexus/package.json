@@ -9,6 +9,7 @@
   },
   "scripts": {
     "verify": "python3 build/arc_orchestrator.py --slides 15",
+    "benchmark": "python3 build/arc_orchestrator.py --benchmark spirits_within",
     "test": "python3 -m unittest discover -s tests -v",
     "orchestrate": "python3 build/arc_orchestrator.py --slides 15"
   },

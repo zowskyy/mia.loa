@@ -1,0 +1,73 @@
+// benchmark/spirits_within/optimization.frontier
+// LOD, Adaptive Resolution, Frustum/Occlusion Culling — Spirits Within
+// Project Nexus · ARC A+ Hard Gate
+
+component OptimizationEngine {
+    static characterLOD(distance: f32, quality: Quality) -> LODLevel {
+        match quality {
+            High => {
+                if distance < 10 { LOD0 }
+                else if distance < 25 { LOD1 }
+                else { LOD2 }
+            },
+            Medium => {
+                if distance < 15 { LOD1 }
+                else { LOD2 }
+            },
+            Low => { LOD2 }
+        }
+    },
+
+    static adaptiveResolution(fps: f32, targetFPS: f32) -> f32 {
+        if fps > targetFPS {
+            return 1.0;
+        } else {
+            return max(fps / targetFPS, 0.5);
+        }
+    },
+
+    static frustumCull(objects: [Object], camera: Camera) -> [Object] {
+        let visible = [];
+        for object in objects {
+            if camera.frustum.contains(object.bounds) {
+                visible.push(object);
+            }
+        }
+        return visible;
+    },
+
+    static occlusionCull(visible: [Object]) -> [Object] {
+        // GPU-based occlusion culling
+        return GPU.occlusionCull(visible);
+    },
+
+    static optimizeScene(scene: CinematicScene) {
+        let start = time;
+
+        // LOD (3 levels)
+        for char in scene.characters {
+            let dist = distance(char.position, scene.cameras[scene.currentCamera].position);
+            let lod = OptimizationEngine.characterLOD(dist, Quality.High);
+            char.setLOD(lod);
+        }
+
+        // Adaptive resolution scaling
+        let scale = OptimizationEngine.adaptiveResolution(fps, 60);
+        Renderer.setResolutionScale(scale);
+
+        // Frustum + occlusion culling
+        let frustumVisible = OptimizationEngine.frustumCull(scene.objects, scene.cameras[scene.currentCamera]);
+        let visible = OptimizationEngine.occlusionCull(frustumVisible);
+        Renderer.setVisible(visible);
+
+        // ARC Gate: Optimization overhead < 1ms
+        assert((time - start) < 1.0);
+    },
+
+    static cullStats(before: usize, afterFrustum: usize, afterOcclusion: usize) -> CullStats {
+        return CullStats {
+            frustumReduction: 1.0 - (afterFrustum as f32 / before as f32),
+            occlusionReduction: 1.0 - (afterOcclusion as f32 / afterFrustum as f32),
+        };
+    }
+}

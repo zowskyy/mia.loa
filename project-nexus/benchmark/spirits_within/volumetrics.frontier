@@ -1,0 +1,54 @@
+// benchmark/spirits_within/volumetrics.frontier
+// Volumetric Fog, God Rays, Atmospheric Scattering — Spirits Within
+// Project Nexus · ARC A+ Hard Gate
+
+component VolumetricRenderer {
+    static renderFog(ctx: RenderContext, scene: Scene) {
+        let start = time;
+
+        // Screen-space volumetric fog via ray marching
+        let volumeTexture = GPU.rayMarch(
+            camera: ctx.camera,
+            resolution: ctx.resolution / 2,
+            steps: 64,
+            density: scene.fogDensity,
+            light: scene.directionalLight
+        );
+
+        let fullRes = GPU.upsample(volumeTexture, ctx.resolution);
+        Renderer.composite(fullRes);
+
+        // ARC Gate: Fog render < 5ms
+        assert((time - start) < 5.0);
+    },
+
+    static renderGodRays(ctx: RenderContext, light: Light) {
+        let start = time;
+
+        let depthMap = GPU.renderDepth(light.position);
+        let rays = GPU.rayMarchGodRays(
+            depthMap,
+            steps: 32,
+            resolution: ctx.resolution / 4,
+            light.position
+        );
+        Renderer.add(rays);
+
+        // ARC Gate: God rays performant (< 5ms budget share)
+        assert((time - start) < 5.0);
+    },
+
+    static atmosphericScattering(viewDir: Vector3, sunDir: Vector3) -> Color {
+        let start = time;
+
+        // Rayleigh + Mie
+        let rayleigh = Rayleigh.scatter(viewDir, sunDir);
+        let mie = Mie.scatter(viewDir, sunDir);
+        let color = rayleigh + mie;
+
+        // ARC Gate: Atmospheric scattering adds < 1ms
+        assert((time - start) < 1.0);
+
+        return color;
+    }
+}

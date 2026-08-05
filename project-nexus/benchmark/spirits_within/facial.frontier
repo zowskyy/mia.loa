@@ -1,0 +1,91 @@
+// benchmark/spirits_within/facial.frontier
+// 52 FACS Units + Emotion Mapping — Spirits Within Benchmark
+// Project Nexus · ARC A+ Hard Gate
+
+component FacialSystem {
+    // Core FACS unit ranges (subset shown; full 52 via FACSRegistry)
+    static facsMap: {
+        eyeBlinkLeft: 0.0..1.0,
+        eyeBlinkRight: 0.0..1.0,
+        eyeSquintLeft: 0.0..1.0,
+        eyeSquintRight: 0.0..1.0,
+        browLowerLeft: 0.0..1.0,
+        browLowerRight: 0.0..1.0,
+        browRaiseLeft: 0.0..1.0,
+        browRaiseRight: 0.0..1.0,
+        mouthSmile: 0.0..1.0,
+        mouthFrown: 0.0..1.0,
+        mouthOpen: 0.0..1.0,
+        mouthPucker: 0.0..1.0,
+        cheekRaise: 0.0..1.0,
+        cheekPuff: 0.0..1.0,
+        // Remaining units registered in FACSRegistry (52 total)
+    },
+
+    static unitCount() -> usize {
+        return FACSRegistry.count(); // 52
+    },
+
+    static emotionToFACS(emotion: String) -> FACSMap {
+        match emotion {
+            "joy" => FACSMap {
+                mouthSmile: 0.8,
+                cheekRaise: 0.6,
+                eyeSquintLeft: 0.4,
+                eyeSquintRight: 0.4,
+            },
+            "sadness" => FACSMap {
+                browRaiseLeft: 0.6,
+                browRaiseRight: 0.6,
+                mouthFrown: 0.5,
+                eyeBlinkLeft: 0.2,
+                eyeBlinkRight: 0.2,
+            },
+            "anger" => FACSMap {
+                browLowerLeft: 0.9,
+                browLowerRight: 0.9,
+                mouthOpen: 0.3,
+                eyeSquintLeft: 0.8,
+                eyeSquintRight: 0.8,
+            },
+            "fear" => FACSMap {
+                browRaiseLeft: 0.8,
+                browRaiseRight: 0.8,
+                mouthOpen: 0.7,
+                eyeBlinkLeft: 0.1,
+                eyeBlinkRight: 0.1,
+            },
+            "disgust" => FACSMap {
+                browLowerLeft: 0.5,
+                browLowerRight: 0.5,
+                mouthPucker: 0.6,
+                cheekRaise: 0.3,
+            },
+            "surprise" => FACSMap {
+                browRaiseLeft: 1.0,
+                browRaiseRight: 1.0,
+                mouthOpen: 0.9,
+            },
+            _ => FACSMap.neutral(),
+        }
+    },
+
+    static blendExpressions(current: FACSMap, target: FACSMap, t: f32) -> FACSMap {
+        let start = time;
+        let result = FACSMap {};
+
+        for key, value in current {
+            result[key] = lerp(value, target[key], smoothstep(t));
+        }
+
+        // ARC Gate: Expression update < 1ms
+        assert((time - start) < 1.0);
+
+        return result;
+    },
+
+    static update(current: FACSMap, emotion: String, t: f32) -> FACSMap {
+        let target = FacialSystem.emotionToFACS(emotion);
+        return FacialSystem.blendExpressions(current, target, t);
+    }
+}
