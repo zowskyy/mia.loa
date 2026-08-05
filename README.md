@@ -80,6 +80,8 @@ Output goes to `deploy/` — Community Kits, offline docs, i18n, Navigator train
 git tag v1.0.2 && git push origin v1.0.2
 ```
 
+Workflows: `.github/workflows/release-all.yml` + `.github/workflows/a-plus-hard-gate.yml`
+
 **Manual:**
 
 ```bash
@@ -88,6 +90,20 @@ node release.js all
 ```
 
 See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
+
+## Frontier-Syntax integration
+
+Lighthouse generates code; [Frontier-Syntax](https://github.com/zowskyy/frontier-syntax) verifies and compiles it.
+
+| Layer | Location | Status |
+|-------|----------|--------|
+| In-browser validation | `public/frontier-parser.js` + `public/syntax/` | Cycle 1 lexer active; WASM auto-loads at Cycle 6 |
+| Native compile | `POST /api/frontier/compile` | Requires `FRONTIER_COMPILER` or `FRONTIER_HOME` |
+| Sync assets | `./scripts/sync-frontier-syntax.sh` | Pull token table + WASM from frontier-syntax |
+
+**Pipeline:** idea → ARC generates code → Frontier validates in browser → optional native binary via Frontier compiler.
+
+Set `FRONTIER_HOME` to a local `frontier-syntax` checkout after `cargo build --release`.
 
 ## Requirements
 

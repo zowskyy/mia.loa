@@ -42,6 +42,15 @@ code{font-family:monospace;font-size:12px}
 .panel-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--b)}
 .panel-header button{padding:6px 12px;border-radius:8px;border:1px solid var(--b);background:var(--s2);color:var(--t);cursor:pointer}
 #codeContent{flex:1;padding:16px;overflow:auto;font-family:monospace;font-size:12px;background:var(--bg);white-space:pre-wrap}
+#validationBadge{font-size:11px;padding:4px 8px;border-radius:12px;margin-right:8px}
+#validationBadge.valid{background:rgba(78,204,163,.15);color:var(--g)}
+#validationBadge.invalid{background:rgba(255,77,106,.15);color:var(--a)}
+#validationBadge.pending{background:var(--s2);color:var(--t2)}
+.download-wrap{position:relative;display:inline-block}
+.download-menu{display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--s2);border:1px solid var(--b);border-radius:8px;min-width:200px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.download-menu.open{display:flex;flex-direction:column;padding:4px}
+.download-menu button{display:block;width:100%;text-align:left;padding:10px 14px;border:0;background:0;color:var(--t);font-size:12px;cursor:pointer;border-radius:6px}
+.download-menu button:hover{background:var(--a);color:#fff}
 footer{padding:10px 16px;background:var(--s1);border-top:1px solid var(--b);display:flex;gap:8px;flex-shrink:0}
 footer textarea{flex:1;background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:10px 14px;color:var(--t);font-size:14px;resize:none;min-height:42px;max-height:120px;outline:0;font-family:inherit}
 footer textarea:focus{border-color:var(--a)}
@@ -82,9 +91,17 @@ footer button:disabled{opacity:.4}
 <div class="panel" id="codePanel">
   <div class="panel-header">
     <b id="codeTitle">💻 Code</b>
-    <div>
-      <button onclick="downloadCode()">⬇️ Download</button>
-      <button onclick="document.getElementById('codePanel').classList.remove('open')">✕</button>
+    <div style="display:flex;align-items:center">
+      <span id="validationBadge" class="pending">—</span>
+      <div class="download-wrap">
+        <button onclick="toggleDownloadMenu(event)">⬇️ Download ▾</button>
+        <div id="downloadMenu" class="download-menu">
+          <button onclick="downloadAs('javascript')">⬇️ JavaScript (.js)</button>
+          <button onclick="downloadAs('python')">⬇️ Python (.py)</button>
+          <button onclick="compileToNative()">⚙️ Compile to Native (Frontier)</button>
+        </div>
+      </div>
+      <button onclick="document.getElementById('codePanel').classList.remove('open')" style="margin-left:6px">✕</button>
     </div>
   </div>
   <div id="codeContent"></div>
@@ -96,6 +113,7 @@ footer button:disabled{opacity:.4}
 </footer>
 
 <script src="client.js"></script>
+<script src="frontier-parser.js"></script>
 <script src="webllm.js"></script>
 <script src="webllm-bridge.js"></script>
 <script src="mobile.js"></script>

@@ -90,12 +90,14 @@ const PLATFORMS = {
 
 const CORE_FILES = [
   'core.js', 'setup.js', 'package.json', 'README.md',
-  'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js'
+  'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js',
+  'lib/frontier.js', 'scripts/sync-frontier-syntax.sh'
 ];
 
 const PUBLIC_FILES = [
   'index.html', 'client.js', 'mobile.js', 'mobile.css', 'sw.js', 'manifest.json',
-  'webllm.js', 'webllm-bridge.js', 'connect.html', 'investor.html', 'i18n.js'
+  'webllm.js', 'webllm-bridge.js', 'connect.html', 'investor.html', 'i18n.js',
+  'frontier-parser.js', 'syntax/token_regex_table.json', 'syntax/README.md'
 ];
 
 const MODEL_FILE = join('models', 'model.gguf');
