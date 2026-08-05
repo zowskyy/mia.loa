@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Record Impact — Lighthouse</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; background: #0a0a1a; color: #e0e0f0; }
+    select, input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #2a2a4a; background: #12122a; color: #e0e0f0; font-size: 16px; }
+    button { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    .success { background: #4ecca3; color: #0a0a1a; padding: 10px; border-radius: 8px; text-align: center; margin-top: 10px; display: none; }
+    a { color: #e94560; }
+  </style>
+</head>
+<body>
+  <h1>📊 Record Impact</h1>
+  <p><a href="dashboard.html">← Dashboard</a></p>
+  <form id="impactForm">
+    <select id="type">
+      <option value="app_built">App Built</option>
+      <option value="person_trained">Person Trained</option>
+      <option value="community_served">Community Served</option>
+      <option value="kit_deployed">Kit Deployed</option>
+    </select>
+    <input id="description" placeholder="What happened? (brief)">
+    <input id="navigator" placeholder="Your name">
+    <input id="community" placeholder="Community name">
+    <button type="submit">Record</button>
+  </form>
+  <div class="success" id="success">✅ Impact recorded!</div>
+  <script>
+    document.getElementById('impactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await fetch('/api/impact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: document.getElementById('type').value,
+          description: document.getElementById('description').value,
+          navigator: document.getElementById('navigator').value,
+          community: document.getElementById('community').value,
+          language: window.navigator.language.split('-')[0],
+          region: 'east-africa'
+        })
+      });
+      document.getElementById('success').style.display = 'block';
+      setTimeout(() => document.getElementById('success').style.display = 'none', 3000);
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>

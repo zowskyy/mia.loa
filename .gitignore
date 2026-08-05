@@ -2,6 +2,7 @@ node_modules/
 models/
 projects/
 releases/
+deploy/
 mobile/capacitor/node_modules/
 mobile/capacitor/www/
 mobile/capacitor/android/

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lighthouse Impact — East Africa</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; padding: 20px; background: #0a0a1a; color: #e0e0f0; }
+    h1 { color: #e94560; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+    .metric { background: #12122a; padding: 20px; border-radius: 12px; text-align: center; }
+    .metric .value { font-size: 36px; font-weight: bold; color: #4ecca3; }
+    .metric .label { font-size: 12px; color: #8888aa; margin-top: 5px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #2a2a4a; }
+    th { color: #8888aa; font-size: 12px; }
+    a { color: #e94560; }
+  </style>
+</head>
+<body>
+  <h1>⚡ Lighthouse Impact — East Africa</h1>
+  <p><a href="record.html">+ Record impact</a></p>
+  <div class="metrics" id="metrics">Loading...</div>
+  <h2>Recent Activity</h2>
+  <table><thead><tr><th>Time</th><th>Type</th><th>Community</th><th>Navigator</th></tr></thead>
+  <tbody id="recent"></tbody></table>
+  <script>
+    fetch('/api/impact').then(r => r.json()).then(d => {
+      document.getElementById('metrics').innerHTML =
+        '<div class="metric"><div class="value">' + d.total + '</div><div class="label">Total Actions</div></div>' +
+        Object.entries(d.totals || {}).map(([k,v]) =>
+          '<div class="metric"><div class="value">' + v + '</div><div class="label">' + k.replace(/_/g,' ') + '</div></div>'
+        ).join('');
+      document.getElementById('recent').innerHTML = (d.recentEntries || []).slice().reverse().slice(0, 20).map(e =>
+        '<tr><td>' + new Date(e.timestamp).toLocaleString() + '</td><td>' + e.type + '</td><td>' + (e.community||'') + '</td><td>' + (e.navigator||'') + '</td></tr>'
+      ).join('');
+    });
+  </script>
+</body>
+</html>

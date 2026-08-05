@@ -15,7 +15,7 @@ const express = require('express');
 const { spawn, execSync } = require('child_process');
 const {
   existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync,
-  statSync
+  statSync, appendFileSync
 } = require('fs');
 const { join, basename, extname } = require('path');
 
@@ -575,6 +575,70 @@ app.post('/api/scan', async (req, res) => {
   const { dir = '.', query = '' } = req.body;
   const results = await scanFiles(dir, query);
   res.json({ count: results.length, results: results.slice(0, 30) });
+});
+
+const IMPACT_DIR = join(PROJECT_DIR, '_impact');
+
+app.post('/api/impact', (req, res) => {
+  const { type, description, navigator, community, language, region } = req.body;
+  const validTypes = ['app_built', 'person_trained', 'community_served', 'kit_deployed'];
+  if (!validTypes.includes(type)) {
+    return res.status(400).json({ error: 'Invalid type. Use: ' + validTypes.join(', ') });
+  }
+
+  if (!existsSync(IMPACT_DIR)) mkdirSync(IMPACT_DIR, { recursive: true });
+
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    timestamp: new Date().toISOString(),
+    type,
+    description: description || '',
+    navigator: navigator || 'anonymous',
+    community: community || 'unknown',
+    language: language || 'en',
+    region: region || 'global',
+    version: '1.0.1'
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+  appendFileSync(join(IMPACT_DIR, `${today}.jsonl`), JSON.stringify(entry) + '\n');
+  res.json({ recorded: true, id: entry.id });
+});
+
+app.get('/api/impact', (req, res) => {
+  if (!existsSync(IMPACT_DIR)) {
+    return res.json({ entries: [], totals: {}, total: 0, recentEntries: [] });
+  }
+
+  const allEntries = [];
+  readdirSync(IMPACT_DIR)
+    .filter(f => f.endsWith('.jsonl'))
+    .forEach(f => {
+      readFileSync(join(IMPACT_DIR, f), 'utf-8')
+        .split('\n')
+        .filter(Boolean)
+        .forEach(line => {
+          try { allEntries.push(JSON.parse(line)); } catch {}
+        });
+    });
+
+  const totals = {};
+  const byDay = {};
+  const byCommunity = {};
+  allEntries.forEach(e => {
+    totals[e.type] = (totals[e.type] || 0) + 1;
+    const day = e.timestamp.split('T')[0];
+    byDay[day] = (byDay[day] || 0) + 1;
+    byCommunity[e.community] = (byCommunity[e.community] || 0) + 1;
+  });
+
+  res.json({
+    total: allEntries.length,
+    totals,
+    byDay,
+    byCommunity,
+    recentEntries: allEntries.slice(-50)
+  });
 });
 
 async function scanFiles(dir, query) {

@@ -59,6 +59,19 @@ Requires Chrome 127+ with WebGPU and 8GB+ RAM. Enable via the header toggle. See
 - 💾 **Projects** — Save and load your work
 - 🖥️ **CLI** — Terminal mode for headless systems
 
+## Field deployment
+
+```bash
+node deploy.js test                    # Verify readiness
+node deploy.js ship east-africa        # Full kit + docs + training + partners
+node deploy.js kit south-asia          # Community Kit only
+./deploy.sh all global                 # Shell wrapper
+```
+
+Regions: `east-africa`, `south-asia`, `southeast-asia`, `latin-america`, `west-africa`, `global`
+
+Output goes to `deploy/` — Community Kits, offline docs, i18n, Navigator training, partner packages, impact dashboard.
+
 ## Release builds
 
 ```bash
