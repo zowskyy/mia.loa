@@ -30,7 +30,7 @@ mkdirSync(WEB_DIR, { recursive: true });
 const publicFiles = [
   'index.html', 'client.js', 'mobile.js', 'mobile.css',
   'sw.js', 'manifest.json', 'connect.html',
-  'webllm.js', 'webllm-bridge.js', 'frontier-parser.js'
+  'webllm.js', 'webllm-bridge.js'
 ];
 
 for (const file of publicFiles) {

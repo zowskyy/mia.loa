@@ -18,8 +18,6 @@ const {
   statSync, appendFileSync
 } = require('fs');
 const { join, basename, extname } = require('path');
-const { mountFrontierRoutes } = require('./lib/frontier');
-const { attachFrontierToArcResult } = require('./lib/frontier-codegen');
 
 // ═══════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -351,7 +349,6 @@ async function runARCCycle(request, context = {}, streamCallback = null) {
     ARC_SYSTEM.code
   );
   let code = parseJSON(codeRaw) || { files: [], explanation: codeRaw };
-  attachFrontierToArcResult({ plan, code, analysis, request });
   emit('stage', { stage: 'code', status: 'done', data: code });
 
   emit('stage', { stage: 'review', status: 'running' });
@@ -440,7 +437,6 @@ async function exploreIdea(idea) {
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(PUBLIC_DIR));
-mountFrontierRoutes(app);
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -451,8 +447,7 @@ app.get('/api/health', (req, res) => {
     uptime: Math.floor((Date.now() - stats.startTime) / 1000),
     requests: stats.requests,
     errors: stats.errors,
-    version: '1.0.1',
-    frontier: require('./lib/frontier').getStatus()
+    version: '1.0.1'
   });
 });
 
