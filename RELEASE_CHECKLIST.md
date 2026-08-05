@@ -5,54 +5,55 @@ Use this before and after every release build.
 ## Pre-release
 
 - [ ] All tests pass locally (`node core.js` starts, `/api/health` returns `ready`)
-- [ ] Version bumped in `package.json` (must match `release.js` output)
-- [ ] `CHANGELOG` or release notes drafted for GitHub
+- [ ] Version bumped in `package.json`
 - [ ] Model downloaded if building model-inclusive archives: `node setup.js`
 - [ ] Disk space: ~5GB per model-inclusive platform, ~50MB for portable
-- [ ] Tools installed: `tar`, `gzip`, `zip` (or `npm install archiver` for cross-platform archives)
-- [ ] Docker available if building `docker` target (optional)
+- [ ] Tools: `tar`, `gzip`, `zip`
+- [ ] Docker available for `docker` target (optional)
+- [ ] Android SDK + Capacitor for APK builds (optional)
 
 ## Build
 
 ```bash
-# Preview what will be built (7 unique + 1 alias)
-node release.js --dry-run
-
-# Build all platforms
-node release.js --all
-
-# Or use the shell wrapper
-./release.sh --all
-
-# Optional extras
-node release.js --all docker rpi
+node release.js --dry-run       # Preview all 13 formats
+node release.js all             # Build everything
+node release.js desktop         # 6 desktop platforms
+node release.js mobile          # Android APK + iOS Xcode
+node release.js portable        # No-model zip
+node release.js linux-arm64     # Single platform
+./release.sh all
 ```
 
-### Platform matrix
+### Universal release matrix
 
-| Platform | Archive | Includes model |
-|----------|---------|----------------|
+| Platform | Archive | Model |
+|----------|---------|-------|
 | linux-x64 | tar.gz | Yes |
 | linux-arm64 | tar.gz | Yes |
 | linux-armv7l | tar.gz | Yes |
 | macos-x64 | tar.gz | Yes |
 | macos-arm64 | tar.gz | Yes |
-| win-x64 | zip | Yes |
-| android-termux | tar.gz | Yes (alias of linux-arm64) |
+| windows-x64 | zip | Yes |
+| android-arm64 | apk | No (needs server) |
+| android-armv7 | apk | Alias of arm64 APK |
+| ios | tar.gz | Xcode project |
 | portable | zip | No |
+| docker | tar | No (volume mount) |
+| rpi-installer | tar.gz | Installer (not raw .img) |
+| community-kit | tar.gz | Full field kit |
 
 ## Post-release verification
 
-- [ ] Check `releases/manifest.json` — all platforms listed with SHA256
-- [ ] Spot-check one archive: extract, `npm install`, `node core.js`
-- [ ] Verify `RELEASE_NOTES.md` inside archive has correct filename (not `undefined`)
-- [ ] Verify `.sha256` checksums: `sha256sum -c lighthouse-*-linux-x64.tar.gz.sha256`
-- [ ] Upload archives to GitHub Releases
-- [ ] Tag commit: `git tag v1.0.1 && git push origin v1.0.1`
+- [ ] `sha256sum -c releases/SHA256SUMS`
+- [ ] Check `releases/manifest.json`
+- [ ] Extract one build: `npm install --production && node core.js`
+- [ ] Upload all files from `releases/` to GitHub Release
+- [ ] Copy `RELEASE_NOTES.md` to release description
+- [ ] `git tag v1.0.1 && git push --tags`
 
-## Known constraints
+## Notes
 
-- **android-termux** shares the linux-arm64 binary (alias copy, not a separate build)
-- **portable** has no model — users run `node setup.js` after extract
-- Builds on 4GB RAM machines use streaming checksums (safe)
-- `latest` symlinks in `releases/` may fall back to copies on Windows without symlink permission
+- **android-armv7** shares the same universal APK as android-arm64
+- **rpi-installer** is a tarball + install script, not a bootable SD image
+- **community-kit** excludes `node_modules`, `.git`, `releases/`
+- Streaming SHA256 — safe on 4GB RAM machines
