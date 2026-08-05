@@ -104,7 +104,8 @@ const CORE_FILES = [
 const PUBLIC_FILES = [
   'index.html', 'client.js', 'mobile.js', 'mobile.css', 'sw.js', 'manifest.json',
   'webllm.js', 'webllm-bridge.js', 'connect.html', 'investor.html', 'i18n.js',
-  'frontier-parser.js', 'syntax/token_regex_table.json', 'syntax/README.md'
+  'frontier-parser.js', 'browser-compiler.js', 'download-menu.js',
+  'syntax/token_regex_table.json', 'syntax/README.md'
 ];
 
 const MODEL_FILE = join('models', 'model.gguf');

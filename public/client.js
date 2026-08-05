@@ -1,5 +1,6 @@
 const API = '/api';
 let busy = false, currentFiles = [], viewedFile = null, currentProject = null;
+window.currentFiles = currentFiles;
 
 async function init() {
   const saved = localStorage.getItem('lighthouse_project');
@@ -7,10 +8,6 @@ async function init() {
 
   document.getElementById('inp').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-  });
-  document.addEventListener('click', () => {
-    const menu = document.getElementById('downloadMenu');
-    if (menu) menu.classList.remove('open');
   });
   if (typeof initFrontierParser === 'function') initFrontierParser();
   checkHealth();
@@ -106,6 +103,7 @@ async function handleARC(request) {
 
           if (data.code?.files) {
             currentFiles = data.code.files;
+            window.currentFiles = currentFiles;
             let html = '<b>💻 Generated Files:</b><br>';
             data.code.files.forEach(f => {
               html += `<br><b>📄 ${f.path}</b>${f.language === 'frontier' ? ' ⚙️ <em>native</em>' : ''} — ${f.description || ''}<br>`;
@@ -122,7 +120,7 @@ async function handleARC(request) {
 
               const d = document.createElement('button');
               d.textContent = '⬇️';
-              d.onclick = () => downloadFile(f);
+              d.onclick = () => openDownloadMenuForFile(f);
               btns.appendChild(d);
             });
 
@@ -217,9 +215,25 @@ async function validateCurrentFile() {
   }
 }
 
-function toggleDownloadMenu(e) {
-  e.stopPropagation();
-  document.getElementById('downloadMenu')?.classList.toggle('open');
+function openDownloadMenuForFile(file) {
+  if (typeof showDownloadMenu === 'function') {
+    showDownloadMenu(file);
+    return;
+  }
+  downloadFile(file);
+}
+
+function openDownloadMenu(e) {
+  e?.stopPropagation?.();
+  if (!viewedFile) {
+    alert('Click a file first to view it, then download.');
+    return;
+  }
+  if (typeof showDownloadMenu === 'function') {
+    showDownloadMenu(viewedFile);
+    return;
+  }
+  downloadAs('javascript');
 }
 
 function downloadFile(f, ext) {
@@ -248,7 +262,6 @@ function downloadAs(format) {
   } else {
     downloadFile(viewedFile);
   }
-  document.getElementById('downloadMenu')?.classList.remove('open');
 }
 
 async function compileToNative() {
@@ -256,7 +269,10 @@ async function compileToNative() {
     alert('Click a file first to view it.');
     return;
   }
-  document.getElementById('downloadMenu')?.classList.remove('open');
+  if (typeof showDownloadMenu === 'function') {
+    showDownloadMenu(viewedFile);
+    return;
+  }
   addMsg('⚙️ Compiling to native binary via Frontier...', 'system');
 
   const lang = detectFileLanguage(viewedFile.path, viewedFile.content);

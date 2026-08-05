@@ -14,7 +14,7 @@ if [[ ! -d "$FRONTIER_HOME/.git" ]]; then
   git clone --depth 1 "$REPO" "$FRONTIER_HOME"
 fi
 
-for file in token_regex_table.json lexicon.ebnf wasm_parser.wasm; do
+for file in token_regex_table.json lexicon.ebnf wasm_parser.wasm wasm_compiler.wasm frontier_compiler.wasm; do
   src="$FRONTIER_HOME/syntax/$file"
   if [[ -f "$src" ]]; then
     cp "$src" "$DEST/$file"

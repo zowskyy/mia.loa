@@ -6,6 +6,7 @@ Vendored from [zowskyy/frontier-syntax](https://github.com/zowskyy/frontier-synt
 |------|-------|---------|
 | `token_regex_table.json` | 1 | In-browser lexer validation (fallback until WASM ships) |
 | `wasm_parser.wasm` | 6 | Full AST parse in browser (drop in when built) |
+| `wasm_compiler.wasm` | 6+ | In-browser native compile — browser IS the build system |
 
 ## Sync from Frontier-Syntax
 
