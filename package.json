@@ -1,6 +1,6 @@
 {
   "name": "lighthouse",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Free offline AI coding agent. No subscription. Works on phones, RPi, anything.",
   "main": "core.js",
   "bin": { "lighthouse": "./core.js" },
