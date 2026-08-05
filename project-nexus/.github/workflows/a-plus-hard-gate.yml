@@ -16,6 +16,10 @@ jobs:
           python-version: "3.12"
       - name: Run Slide 15 orchestrator
         run: python3 build/arc_orchestrator.py --slides 15
+      - name: Purge third-party AI (100% Frontier native)
+        run: python3 build/arc_orchestrator.py --patch purge-third-party
+      - name: Native AI slices 15.9–15.12
+        run: python3 build/arc_orchestrator.py --slides 15.9,15.10,15.11,15.12
       - name: Run Spirits Within benchmark
         run: python3 build/arc_orchestrator.py --benchmark spirits_within
       - name: Unit tests

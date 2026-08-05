@@ -2,11 +2,12 @@
 """
 Project Nexus — ARC Orchestrator
 Builds and verifies Cursor IDE (Frontier) via slide-gated A+ Hard Gate Protocol.
-Also runs Spirits Within film-quality real-time benchmark.
+Also runs Spirits Within benchmark and 100% Frontier-native AI slices.
 
 Usage:
     python3 build/arc_orchestrator.py --slides 15
-    python3 build/arc_orchestrator.py --slides all
+    python3 build/arc_orchestrator.py --slides 15.9,15.10,15.11,15.12
+    python3 build/arc_orchestrator.py --patch purge-third-party
     python3 build/arc_orchestrator.py --benchmark spirits_within
     python3 build/arc_orchestrator.py --list
 """
@@ -43,7 +44,7 @@ class GateResult:
 
 @dataclass
 class SlideReport:
-    slide: int
+    slide: str
     title: str
     passed: bool
     gates: list[GateResult] = field(default_factory=list)
@@ -268,7 +269,7 @@ def run_slide_15() -> SlideReport:
     duration = (time.perf_counter() - t0) * 1000
 
     return SlideReport(
-        slide=15,
+        slide="15",
         title="CURSOR IDE — COMPLETE FRONTIER IMPLEMENTATION",
         passed=passed,
         gates=gates,
@@ -277,8 +278,24 @@ def run_slide_15() -> SlideReport:
     )
 
 
-SLIDES: dict[int, tuple[str, Callable[[], SlideReport]]] = {
-    15: ("Cursor IDE (Frontier)", run_slide_15),
+SLIDES: dict[str, tuple[str, Callable[[], "SlideReport"]]] = {
+    "15": ("Cursor IDE (Frontier)", run_slide_15),
+}
+
+
+def _register_native_ai_slices() -> None:
+    from native_ai_purge import SLICE_MARKERS, run_slice
+
+    for slide_id, meta in SLICE_MARKERS.items():
+        # Bind slide_id correctly in closure
+        SLIDES[slide_id] = (meta["title"], lambda s=slide_id: run_slice(s))
+
+
+_register_native_ai_slices()
+
+
+PATCHES = {
+    "purge-third-party": "Remove all third-party AI; enforce 100% Frontier native",
 }
 
 
@@ -296,17 +313,21 @@ def print_report(report: SlideReport) -> None:
     print("-" * 64)
     print(f"Components: {len(report.components)}")
     print(f"Duration: {report.duration_ms:.1f}ms")
-    if report.passed and report.slide == 15:
+    if report.passed and report.slide == "15":
         print()
         print("Project Nexus now includes a world-class IDE written entirely in Frontier.")
         print("All future development can happen inside the IDE itself.")
         print("Frontier is now a complete self-hosting ecosystem.")
+    if report.passed and report.slide.startswith("15."):
+        print()
+        print("100% Frontier-native AI slice verified.")
     print()
 
 
 def write_report(report: SlideReport) -> Path:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    out = REPORTS_DIR / f"slide_{report.slide}_report.json"
+    slug = str(report.slide).replace(".", "_")
+    out = REPORTS_DIR / f"slide_{slug}_report.json"
     payload = {
         "slide": report.slide,
         "title": report.title,
@@ -319,7 +340,7 @@ def write_report(report: SlideReport) -> Path:
     }
     out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-    md = REPORTS_DIR / f"slide_{report.slide}_report.md"
+    md = REPORTS_DIR / f"slide_{slug}_report.md"
     lines = [
         f"# Slide {report.slide} Report — {report.title}",
         "",
@@ -365,38 +386,75 @@ def run_benchmark(name: str) -> int:
     return 1
 
 
+def run_patch(name: str) -> int:
+    if name not in PATCHES:
+        print(f"Unknown patch: {name}", file=sys.stderr)
+        print(f"Available: {', '.join(PATCHES)}", file=sys.stderr)
+        return 1
+    if name == "purge-third-party":
+        from native_ai_purge import (
+            print_slice_report,
+            run_purge_patch,
+            write_slice_report,
+        )
+
+        report = run_purge_patch()
+        print_slice_report(report)
+        path = write_slice_report(report)
+        print(f"Report written: {path}")
+        return 0 if report.passed else 1
+    return 1
+
+
+def _parse_slide_ids(slides_arg: str) -> list[str]:
+    if slides_arg.strip().lower() == "all":
+        # Sort: "15" before "15.9", numeric-aware
+        def key(s: str):
+            parts = s.split(".")
+            return tuple(int(p) for p in parts)
+
+        return sorted(SLIDES.keys(), key=key)
+    return [x.strip() for x in slides_arg.split(",") if x.strip()]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Project Nexus ARC Orchestrator")
-    parser.add_argument("--slides", default=None, help="Slide number, comma list, or 'all'")
+    parser.add_argument("--slides", default=None, help="Slide id(s), e.g. 15 or 15.9,15.10")
     parser.add_argument(
         "--benchmark",
         default=None,
         help="Benchmark name (e.g. spirits_within)",
     )
-    parser.add_argument("--list", action="store_true", help="List available slides and benchmarks")
+    parser.add_argument(
+        "--patch",
+        default=None,
+        help="Patch name (e.g. purge-third-party)",
+    )
+    parser.add_argument("--list", action="store_true", help="List available slides, patches, benchmarks")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable summary")
     args = parser.parse_args(argv)
 
     if args.list:
         print("Slides:")
-        for num, (title, _) in sorted(SLIDES.items()):
+        for num, (title, _) in sorted(SLIDES.items(), key=lambda kv: tuple(int(p) for p in kv[0].split("."))):
             print(f"  {num}: {title}")
+        print("Patches:")
+        for name, title in sorted(PATCHES.items()):
+            print(f"  {name}: {title}")
         print("Benchmarks:")
         for name, title in sorted(BENCHMARKS.items()):
             print(f"  {name}: {title}")
         return 0
 
-    # Benchmark mode takes precedence when specified
+    if args.patch:
+        return run_patch(args.patch.strip().lower())
+
     if args.benchmark:
         return run_benchmark(args.benchmark.strip().lower())
 
     # Default to slide 15 when neither flag provided (back-compat)
     slides_arg = args.slides if args.slides is not None else "15"
-
-    if slides_arg.strip().lower() == "all":
-        selected = sorted(SLIDES.keys())
-    else:
-        selected = [int(x.strip()) for x in slides_arg.split(",")]
+    selected = _parse_slide_ids(slides_arg)
 
     exit_code = 0
     summaries = []
@@ -407,8 +465,16 @@ def main(argv: list[str] | None = None) -> int:
             continue
         _, runner = SLIDES[num]
         report = runner()
-        print_report(report)
-        path = write_report(report)
+        # Native AI slices use SliceReport from native_ai_purge
+        slide_id = str(getattr(report, "slide", ""))
+        if slide_id.startswith("15.") or slide_id == "purge-third-party":
+            from native_ai_purge import print_slice_report, write_slice_report
+
+            print_slice_report(report)
+            path = write_slice_report(report)
+        else:
+            print_report(report)
+            path = write_report(report)
         print(f"Report written: {path}")
         summaries.append(report)
         if not report.passed:

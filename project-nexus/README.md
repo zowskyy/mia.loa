@@ -25,6 +25,10 @@ python3 build/arc_orchestrator.py --slides 15
 # Spirits Within benchmark — film-quality real-time
 python3 build/arc_orchestrator.py --benchmark spirits_within
 
+# 100% Frontier-native AI (purge third-party)
+python3 build/arc_orchestrator.py --patch purge-third-party
+python3 build/arc_orchestrator.py --slides 15.9,15.10,15.11,15.12
+
 # List slides and benchmarks
 python3 build/arc_orchestrator.py --list
 ```
@@ -41,6 +45,12 @@ Expected success output:
 - Visual Quality: Sub-pixel rendering active
 - Size: ~42 MB (gate: <50)
 ```
+
+## 100% Frontier-Native AI
+
+Zero external AI runtimes or cloud completion APIs. Neural engine, language model, tokenizer, training, and applications all live under `frontier/ai/`.
+
+See [docs/ZERO_THIRD_PARTY_AI.md](docs/ZERO_THIRD_PARTY_AI.md).
 
 ## Spirits Within Benchmark
 

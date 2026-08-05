@@ -1,7 +1,7 @@
 # Slide 15 Report — CURSOR IDE — COMPLETE FRONTIER IMPLEMENTATION
 
 **Status:** PASSED ✅
-**Duration:** 1.8ms
+**Duration:** 1.7ms
 
 | Gate | Measured | Target | Pass |
 |------|----------|--------|------|

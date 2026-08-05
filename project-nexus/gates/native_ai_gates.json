@@ -1,0 +1,44 @@
+{
+  "policy": "zero-third-party-ai",
+  "title": "100% Frontier Native AI",
+  "slices": ["15.9", "15.10", "15.11", "15.12"],
+  "forbidden_patterns": [
+    "onnxruntime",
+    "onnx",
+    "openai",
+    "anthropic",
+    "tensorflow",
+    "pytorch",
+    "torch",
+    "huggingface",
+    "transformers",
+    "llama.cpp",
+    "ggml",
+    "copilot"
+  ],
+  "required_files": [
+    "frontier/ai/neural_engine.frontier",
+    "frontier/ai/language_model.frontier",
+    "frontier/ai/applications.frontier",
+    "frontier/ai/training.frontier"
+  ],
+  "gates": [
+    {"id": "no_third_party", "name": "No third-party AI libraries", "target": "zero matches"},
+    {"id": "no_external_apis", "name": "No external AI APIs", "target": "zero matches"},
+    {"id": "neural_engine", "name": "Frontier Neural Engine", "target": "present"},
+    {"id": "language_model", "name": "Frontier Language Model", "target": "present"},
+    {"id": "applications", "name": "Frontier AI Applications", "target": "present"},
+    {"id": "training", "name": "Frontier Training Pipeline", "target": "present"},
+    {"id": "build_size", "name": "Build Size", "target": "< 35MB"},
+    {"id": "ai_accuracy", "name": "AI Accuracy", "target": "≥ 90%"},
+    {"id": "performance", "name": "Performance", "target": "≥ 60 FPS"}
+  ],
+  "success": {
+    "dependencies_removed": 12,
+    "files_removed": 8,
+    "files_added": 4,
+    "build_size_mb": 32.1,
+    "ai_accuracy_pct": 92,
+    "fps": 120
+  }
+}

@@ -1,33 +1,36 @@
 // cursor/src/ai/engine.frontier
 // Frontier's native AI — understands itself
-// Project Nexus · Slide 15 · ARC A+ Hard Gate
+// Project Nexus · Slide 15 · 100% Frontier Native (zero external AI runtimes)
+// Backed by frontier/ai/{neural_engine,language_model,applications}.frontier
 
 component AIEngine {
-    model: NeuralNetwork,
+    model: FrontierLM,          // Pure Frontier LM — never external APIs
+    apps: FrontierAI,           // Pure Frontier application layer
     context: String,
     tokenCache: TokenCache,
 
-    // Generate code from natural language prompt
+    static new() -> AIEngine {
+        NativeAIPolicy.assert_native();
+        return AIEngine {
+            model: FrontierLM.load("frontier/models/frontier-lm.native"),
+            apps: FrontierAI.new(),
+            context: "",
+            tokenCache: TokenCache.new(),
+        };
+    },
+
+    // Generate code from natural language prompt — Frontier writes Frontier
     generate(prompt: String, context: String, style: String) -> String {
-        // 1. Tokenize input
-        let tokens = this.tokenize(prompt + context);
+        // Route through Frontier-native LM (never cloud completion APIs)
+        let code = this.apps.generate_code(prompt, context);
 
-        // 2. Run inference (optimized for Frontier's syntax)
-        let output_tokens = this.model.infer(tokens);
-
-        // 3. Decode tokens to Frontier code
-        let code = this.decode(output_tokens);
-
-        // 4. Apply style rules
         if style.contains("optimized") {
             code = FrontierOptimizer.optimize(code);
         }
 
         if style.contains("ARC-verified") {
-            // Ensure code passes ARC gates
             let arc = ARCChecker.verify(code);
             if arc.hasViolations() {
-                // Self-correct
                 code = this.fixARCViolations(code, arc.violations);
             }
         }
@@ -45,11 +48,12 @@ component AIEngine {
     },
 
     tokenize(input: String) -> Vec<TokenId> {
-        return this.tokenCache.encode(input);
+        // Frontier-native BPE tokenizer
+        return this.model.tokenizer.encode(input).map(|t| TokenId(t));
     },
 
     decode(tokens: Vec<TokenId>) -> String {
-        return this.tokenCache.decode(tokens);
+        return this.model.tokenizer.decode(tokens.map(|t| t.0));
     },
 
     fixARCViolations(code: String, violations: Vec<ARCViolation>) -> String {
@@ -60,61 +64,37 @@ component AIEngine {
         return fixed;
     },
 
-    // Optimize existing Frontier code
     optimize(code: String) -> String {
-        // 1. Parse to AST
+        let suggestions = this.apps.suggest_optimizations(code);
         let ast = FrontierParser.parse(code);
-
-        // 2. Apply optimization rules
-        // - Algebraic simplification: sqrt(x^2 + y^2) → distance2(x, y)
-        // - Loop unrolling: for i in 0..4 → manual operations
-        // - Dead code elimination: remove unused variables
-        // - SIMD vectorization: scalar operations → vector operations
         let optimized = FrontierOptimizer.run(ast);
-
-        // 3. Generate code
+        // Apply FrontierAI suggestions when beneficial
+        for s in suggestions {
+            optimized = FrontierOptimizer.apply(optimized, s);
+        }
         return FrontierGenerator.generate(optimized);
     },
 
-    // Code review — ARC automation
     review(code: String) -> ReviewReport {
-        let ast = FrontierParser.parse(code);
-        let violations = ARCChecker.checkAll(ast);
-
-        let report = ReviewReport {
-            score: 100 - violations.len() * 5,
-            violations: violations,
-            suggestions: FRONTIER_FIXES[violations],
-        };
-
-        return report;
+        return this.apps.review_code(code);
     },
 
-    // Natural language → Frontier code
-    // This is how you build the engine with words
     understand(prompt: String) -> FrontierProgram {
-        // In natural language: "Create a player that moves with WASD"
-        // → Outputs: Frontier Player entity with WASD movement
-
-        let intent = this.parseIntent(prompt);
-        let program = this.generateFromIntent(intent);
-        return program;
+        return this.apps.understand(prompt);
     },
 
     parseIntent(prompt: String) -> Intent {
-        let tokens = this.tokenize(prompt);
-        return IntentClassifier.classify(tokens);
+        return this.apps.parse_intent(prompt);
     },
 
     generateFromIntent(intent: Intent) -> FrontierProgram {
-        let skeleton = IntentTemplates.lookup(intent.kind);
-        return this.model.fill(skeleton, intent.slots);
+        return this.apps.generate_from_intent(intent);
     },
 
-    // Predictive preloading (AI predicts what you'll type)
     predict(context: String) -> String {
-        let tokens = this.tokenize(context);
-        let next = this.model.predict_next(tokens);
-        return this.decode(next);
+        let tokens = this.model.tokenizer.encode(context);
+        let logits = this.model.transformer.forward(tokens, None);
+        let next = Tensor.argmax(logits.last_row());
+        return this.model.tokenizer.decode([next]);
     }
 }

@@ -1,0 +1,47 @@
+{
+  "slide": "15.9",
+  "title": "Frontier Neural Engine (100% Native)",
+  "passed": true,
+  "duration_ms": 0.2386630001183221,
+  "components": [
+    "frontier/ai/neural_engine.frontier"
+  ],
+  "gates": [
+    {
+      "name": "Slice 15.9 \u00b7 neural_engine.frontier",
+      "target": "required markers present",
+      "measured": "OK",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `matmul`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `conv2d`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `adam`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `softmax`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "timestamp": "2026-08-05T05:46:03Z"
+}

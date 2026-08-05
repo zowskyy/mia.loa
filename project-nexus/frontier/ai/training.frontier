@@ -1,0 +1,106 @@
+// frontier/ai/training.frontier
+// Pure Frontier Training Pipeline — self-supervised + RLHF
+// Project Nexus · Slice 15.11/15.12 · ARC A+ Hard Gate · 100% Native
+
+component TrainingPipeline {
+    model: FrontierLM,
+    optimizer: String, // "adam" | "sgd" | "rmsprop"
+    batch_size: usize,
+    learning_rate: f32,
+    checkpoint_dir: Path,
+
+    static new(model: FrontierLM) -> TrainingPipeline {
+        return TrainingPipeline {
+            model: model,
+            optimizer: "adam",
+            batch_size: 32,
+            learning_rate: 0.001,
+            checkpoint_dir: Path("frontier/models/checkpoints"),
+        };
+    },
+
+    // Self-supervised next-token prediction
+    self_supervised(corpus: String, epochs: usize) -> f32 {
+        let final_loss = 0.0;
+        for epoch in 0..epochs {
+            let loss = 0.0;
+            let steps = 0;
+            for batch in corpus.batches(this.batch_size) {
+                let tokens = this.model.tokenizer.encode(batch);
+                if tokens.len() < 2 { continue; }
+                let input = tokens[0..tokens.len() - 1];
+                let target = tokens[1..];
+                let logits = this.model.transformer.forward(input, None);
+                let batch_loss = Tensor.cross_entropy(logits, target);
+                loss += batch_loss;
+                steps += 1;
+
+                let grads = this.model.backward(batch_loss);
+                this.optimizer_step(grads);
+            }
+            final_loss = loss / max(steps, 1) as f32;
+            if epoch % 10 == 0 {
+                this.checkpoint(epoch, final_loss);
+            }
+        }
+        return final_loss;
+    },
+
+    // RLHF — preference pairs (chosen vs rejected)
+    rlhf(preferences: [(String, String, String)], epochs: usize) {
+        for _ in 0..epochs {
+            for (prompt, chosen, rejected) in preferences {
+                let loss = this.preference_loss(prompt, chosen, rejected);
+                this.optimizer_step(this.model.backward(loss));
+            }
+        }
+    },
+
+    preference_loss(prompt: String, chosen: String, rejected: String) -> f32 {
+        let p_c = this.logprob(prompt, chosen);
+        let p_r = this.logprob(prompt, rejected);
+        // Bradley-Terry preference objective
+        return -log(Tensor.sigmoid(p_c - p_r));
+    },
+
+    logprob(prompt: String, completion: String) -> f32 {
+        let tokens = this.model.tokenizer.encode(prompt + completion);
+        let logits = this.model.transformer.forward(tokens[0..tokens.len() - 1], None);
+        return -Tensor.cross_entropy(logits, tokens[1..]);
+    },
+
+    optimizer_step(grads: Gradients) {
+        match this.optimizer {
+            "adam" => Optimizer.adam_step(this.model, grads),
+            "sgd" => Optimizer.sgd_step(this.model, grads, this.learning_rate),
+            "rmsprop" => Optimizer.rmsprop_step(this.model, grads),
+            _ => Optimizer.adam_step(this.model, grads),
+        }
+    },
+
+    checkpoint(epoch: usize, loss: f32) {
+        let path = this.checkpoint_dir.join("epoch_" + epoch.to_string() + ".native");
+        CheckpointWriter.write(path, this.model, loss);
+    },
+
+    // Domain adaptation for Frontier syntax / game engine
+    fine_tune_frontier(domain_corpus: String, epochs: usize) {
+        this.model.fine_tune(domain_corpus, epochs);
+        CheckpointWriter.write(
+            this.checkpoint_dir.join("frontier-domain.native"),
+            this.model,
+            0.0
+        );
+    }
+}
+
+component NativeCompression {
+    // Replaces any third-party asset codec — pure Frontier
+    static compress(data: [u8]) -> [u8] {
+        return FrontierLZ.encode(data);
+    },
+
+    static decompress(data: [u8]) -> [u8] {
+        return FrontierLZ.decode(data);
+    }
+}

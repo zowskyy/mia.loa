@@ -1,0 +1,47 @@
+{
+  "slide": "15.10",
+  "title": "Frontier Language Model (100% Native)",
+  "passed": true,
+  "duration_ms": 0.19864599994434684,
+  "components": [
+    "frontier/ai/language_model.frontier"
+  ],
+  "gates": [
+    {
+      "name": "Slice 15.10 \u00b7 language_model.frontier",
+      "target": "required markers present",
+      "measured": "OK",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `MultiHeadAttention`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `Tokenizer`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `Transformer`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `generate(`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "timestamp": "2026-08-05T05:46:03Z"
+}

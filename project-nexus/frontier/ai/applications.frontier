@@ -1,0 +1,164 @@
+// frontier/ai/applications.frontier
+// Pure Frontier AI Applications — no third-party AI services
+// Project Nexus · Slice 15.11 · ARC A+ Hard Gate · 100% Native
+
+component FrontierAI {
+    model: FrontierLM,
+
+    static new() -> FrontierAI {
+        // Boot from on-disk Frontier-native checkpoint (no cloud APIs)
+        let model = FrontierLM.load("frontier/models/frontier-lm.native");
+        return FrontierAI { model: model };
+    },
+
+    // Code generation (Frontier writes Frontier)
+    generate_code(prompt: String, context: String) -> String {
+        let full_prompt = "Write Frontier code for: " + prompt + "\n\nContext:\n" + context;
+        return this.model.generate(full_prompt, 1024);
+    },
+
+    // Code review (ARC automation)
+    review_code(code: String) -> ReviewReport {
+        let ast = FrontierParser.parse(code);
+        let violations = ARCChecker.checkAll(ast);
+
+        let report = ReviewReport {
+            score: 100 - violations.len() * 5,
+            violations: violations,
+            suggestions: this.suggest_fixes(violations),
+        };
+
+        return report;
+    },
+
+    suggest_fixes(violations: [ARCViolation]) -> [String] {
+        let fixes = [];
+        for v in violations {
+            fixes.push(FRONTIER_FIXES.lookup(v.kind));
+        }
+        return fixes;
+    },
+
+    // Optimization suggestions
+    suggest_optimizations(code: String) -> [Optimization] {
+        let ast = FrontierParser.parse(code);
+        let suggestions = [];
+
+        for node in ast.nodes {
+            if node.contains("sqrt") {
+                suggestions.push(Optimization {
+                    line: node.line,
+                    description: "Replace sqrt with fast_inv_sqrt for 3x speedup",
+                    replacement: "fast_inv_sqrt(" + node.args + ")",
+                });
+            }
+            if node.contains("for") && node.loop_count > 1000 {
+                suggestions.push(Optimization {
+                    line: node.line,
+                    description: "Consider vectorizing this loop",
+                    replacement: "GPU.parallel_for(" + node.loop_count.to_string() + ", " + node.body + ")",
+                });
+            }
+        }
+
+        return suggestions;
+    },
+
+    // Natural language → Frontier code
+    understand(prompt: String) -> FrontierProgram {
+        // "Create a player that moves with WASD"
+        // → Player component with WASD movement
+        let intent = this.parse_intent(prompt);
+        let program = this.generate_from_intent(intent);
+        return program;
+    },
+
+    parse_intent(prompt: String) -> Intent {
+        let tokens = this.model.tokenizer.encode(prompt);
+        return IntentClassifier.classify_native(tokens);
+    },
+
+    generate_from_intent(intent: Intent) -> FrontierProgram {
+        let skeleton = IntentTemplates.lookup(intent.kind);
+        let code = this.model.generate(skeleton + "\n" + intent.slots.join(","), 512);
+        return FrontierProgram.from_source(code);
+    },
+
+    // Game AI (NPC behavior)
+    generate_behavior(description: String) -> BehaviorTree {
+        // "Patrol between waypoints, chase player if spotted"
+        let tree = BehaviorTree.new();
+        let root = Sequence.new();
+
+        if description.contains("patrol") {
+            root.add(PatrolBehavior.new());
+        }
+        if description.contains("chase") {
+            root.add(ChaseBehavior.new());
+        }
+        if description.contains("pathfind") {
+            root.add(PathfindBehavior.new());
+        }
+
+        tree.set_root(root);
+        return tree;
+    },
+
+    // Procedural content generation
+    generate_texture(description: String) -> Texture {
+        // "A brick wall with moss"
+        let texture = Texture.new(1024, 1024);
+        let pattern = this.generate_pattern(description);
+        let colors = this.generate_colors(description);
+
+        for y in 0..texture.height {
+            for x in 0..texture.width {
+                let pixel = pattern(x, y, colors);
+                texture.setPixel(x, y, pixel);
+            }
+        }
+
+        return texture;
+    },
+
+    generate_pattern(description: String) -> PatternFn {
+        return Procedural.pattern_from_prompt(description, this.model);
+    },
+
+    generate_colors(description: String) -> [Color] {
+        return Procedural.palette_from_prompt(description, this.model);
+    },
+
+    // Automated unit test generation
+    generate_tests(code: String) -> String {
+        let ast = FrontierParser.parse(code);
+        let tests = "";
+
+        for function in ast.functions {
+            tests += "test " + function.name + "() {\n";
+            tests += "    let result = " + function.name + "(";
+            for param in function.params {
+                tests += this.generate_test_value(param.type) + ", ";
+            }
+            tests += ");\n";
+            tests += "    assert(result == " + this.generate_expected_value(function) + ");\n";
+            tests += "}\n\n";
+        }
+
+        return tests;
+    },
+
+    generate_test_value(ty: String) -> String {
+        match ty {
+            "f32" => "1.0",
+            "usize" => "0",
+            "String" => "\"test\"",
+            "bool" => "true",
+            _ => "Default::new()",
+        }
+    },
+
+    generate_expected_value(function: FunctionNode) -> String {
+        return this.model.generate("Expected return for " + function.name, 32).trim();
+    }
+}

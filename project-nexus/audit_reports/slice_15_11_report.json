@@ -1,0 +1,55 @@
+{
+  "slide": "15.11",
+  "title": "Frontier AI Applications (100% Native)",
+  "passed": true,
+  "duration_ms": 0.14839100003882777,
+  "components": [
+    "frontier/ai/applications.frontier",
+    "frontier/ai/training.frontier"
+  ],
+  "gates": [
+    {
+      "name": "Slice 15.11 \u00b7 applications.frontier",
+      "target": "required markers present",
+      "measured": "OK",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Slice 15.11 \u00b7 training.frontier",
+      "target": "required markers present",
+      "measured": "OK",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `generate_code`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `review_code`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `generate_behavior`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Marker `generate_texture`",
+      "target": "present",
+      "measured": "present",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "timestamp": "2026-08-05T05:46:03Z"
+}
