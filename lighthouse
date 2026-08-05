@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Lighthouse CLI launcher
+DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ ! -f "$DIR/core.js" ]; then
+  echo "Error: core.js not found. Run from the lighthouse directory."
+  exit 1
+fi
+node "$DIR/core.js" "$@"

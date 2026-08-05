@@ -1,0 +1,20 @@
+{
+  "name": "lighthouse",
+  "version": "1.0.1",
+  "description": "Free offline AI coding agent. No subscription. Works on phones, RPi, anything.",
+  "main": "core.js",
+  "bin": { "lighthouse": "./core.js" },
+  "scripts": {
+    "start": "node core.js",
+    "setup": "node setup.js",
+    "release": "node release.js",
+    "mobile:build": "node mobile/capacitor/build-mobile.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}

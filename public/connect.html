@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0a1a">
+<title>Connect — Lighthouse</title>
+<style>
+:root{--bg:#0a0a1a;--s1:#12122a;--t:#e0e0f0;--t2:#8888aa;--a:#ff4d6a;--g:#4ecca3}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t);min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:var(--s1);border:1px solid #2a2a4a;border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center}
+h1{font-size:20px;margin-bottom:8px}
+p{color:var(--t2);font-size:14px;line-height:1.6;margin-bottom:16px}
+img{border-radius:12px;margin:16px 0;max-width:200px;width:100%}
+.url{background:#0a0a1a;border:1px solid #2a2a4a;border-radius:8px;padding:12px;font-family:monospace;font-size:13px;word-break:break-all;margin:12px 0}
+a{color:var(--a);text-decoration:none}
+.btn{display:inline-block;margin-top:12px;padding:10px 20px;background:var(--a);color:#fff;border-radius:12px;font-size:14px}
+.offline{color:var(--a)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⚡ Connect to Lighthouse</h1>
+  <p id="instructions">Scan this QR code with your phone camera to open Lighthouse on this network.</p>
+  <div id="content">Loading...</div>
+</div>
+<script>
+fetch('/api/connect')
+  .then(r => r.json())
+  .then(d => {
+    const el = document.getElementById('content');
+    if (!d.addresses || d.addresses.length === 0) {
+      el.innerHTML = '<p class="offline">No network address found.<br>Connect to Wi-Fi and refresh.</p>';
+      return;
+    }
+    el.innerHTML = `
+      ${d.qrCode ? `<img src="${d.qrCode}" alt="QR code" width="200" height="200">` : ''}
+      <div class="url"><a href="${d.url}">${d.url}</a></div>
+      <p>Make sure your phone is on the <b>same Wi-Fi</b> as this computer.</p>
+      <a class="btn" href="${d.url}">Open Lighthouse</a>
+    `;
+  })
+  .catch(() => {
+    document.getElementById('content').innerHTML = '<p class="offline">Server not reachable.</p>';
+  });
+</script>
+</body>
+</html>

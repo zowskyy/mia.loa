@@ -1,0 +1,21 @@
+{
+  "appId": "org.lighthouse.coding.agent",
+  "appName": "Lighthouse",
+  "webDir": "www",
+  "server": {
+    "url": "http://localhost:8899",
+    "cleartext": true,
+    "androidScheme": "http"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0a0a1a",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0a0a1a"
+    }
+  }
+}
