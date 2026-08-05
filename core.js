@@ -770,7 +770,7 @@ async function start() {
 
     const addresses = getNetworkAddresses();
     if (addresses.length > 0) {
-      console.log(`📱 Phone:  ${addresses[0]}  (QR: /api/connect)`);
+      console.log(`📱 Phone:  ${addresses[0]}/connect.html  (QR: /api/connect)`);
     }
 
     if (backend === 'mock') {

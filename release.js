@@ -113,7 +113,9 @@ function getAliasPlatforms(primaryKey) {
 
 const CORE_FILES = [
   'core.js', 'setup.js', 'package.json', 'README.md',
-  'public/index.html', 'public/client.js', 'public/mobile.js', 'public/mobile.css', 'public/sw.js',
+  'public/index.html', 'public/client.js', 'public/mobile.js', 'public/mobile.css',
+  'public/webllm.js', 'public/webllm-bridge.js', 'public/manifest.json', 'public/connect.html',
+  'public/sw.js',
   'lighthouse', 'lighthouse.bat'
 ];
 

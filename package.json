@@ -6,7 +6,9 @@
   "bin": { "lighthouse": "./core.js" },
   "scripts": {
     "start": "node core.js",
-    "setup": "node setup.js"
+    "setup": "node setup.js",
+    "release": "node release.js",
+    "mobile:build": "node mobile/capacitor/build-mobile.js"
   },
   "dependencies": {
     "express": "^4.21.0"

@@ -2,6 +2,10 @@ node_modules/
 models/
 projects/
 releases/
+mobile/capacitor/node_modules/
+mobile/capacitor/www/
+mobile/capacitor/android/
+mobile/capacitor/ios/
 *.gguf
 .DS_Store
 NUL

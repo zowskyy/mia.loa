@@ -46,6 +46,8 @@ async function send() {
   if (text.match(/^idea:?\s/i) || text.match(/^i have an idea/i)) {
     const idea = text.replace(/^idea:?\s*/i, '').replace(/^i have an idea:?\s*/i, '');
     await handleIdea(idea);
+  } else if (window.onDeviceMode && typeof window.handleARCOnDevice === 'function') {
+    await window.handleARCOnDevice(text);
   } else {
     await handleARC(text);
   }
