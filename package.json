@@ -1,6 +1,6 @@
 {
   "name": "lighthouse",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Free offline AI coding agent. No subscription. Works on phones, RPi, anything.",
   "main": "core.js",
   "bin": { "lighthouse": "./core.js" },
@@ -8,6 +8,8 @@
     "start": "node core.js",
     "setup": "node setup.js",
     "release": "node release.js",
+    "assemble": "node assemble.js",
+    "assemble:check": "node assemble.js --check",
     "mobile:build": "node mobile/capacitor/build-mobile.js",
     "deploy": "node deploy.js",
     "deploy:ship": "node deploy.js ship",

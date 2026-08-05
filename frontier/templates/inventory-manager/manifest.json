@@ -1,0 +1,23 @@
+{
+  "name": "inventory-manager",
+  "version": "1.0.0",
+  "description": "Stock tracking for small shops and cooperatives",
+  "icon": "📦",
+  "category": "business",
+  "author": "Lighthouse Community",
+  "license": "MIT",
+  "fields": [
+    "Product",
+    "Stock",
+    "Sale",
+    "Supplier"
+  ],
+  "features": [
+    "Barcode scanning",
+    "Low stock alerts",
+    "Sales reports",
+    "Supplier management"
+  ],
+  "generatedBy": "Lighthouse ARC Engine",
+  "generatedDate": "2026-08-05T06:19:14.755Z"
+}

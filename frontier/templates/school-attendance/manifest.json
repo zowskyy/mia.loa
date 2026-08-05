@@ -1,0 +1,23 @@
+{
+  "name": "school-attendance",
+  "version": "1.0.0",
+  "description": "Student attendance and grade tracking for village schools",
+  "icon": "📚",
+  "category": "education",
+  "author": "Lighthouse Community",
+  "license": "MIT",
+  "fields": [
+    "Student",
+    "Class",
+    "Attendance",
+    "Grade"
+  ],
+  "features": [
+    "QR check-in",
+    "Attendance reports",
+    "Grade tracking",
+    "Parent notifications"
+  ],
+  "generatedBy": "Lighthouse ARC Engine",
+  "generatedDate": "2026-08-05T06:19:14.754Z"
+}

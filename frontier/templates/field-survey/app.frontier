@@ -1,0 +1,80 @@
+// Field Survey — Lighthouse Community Template
+// Offline data collection for community surveys
+// Generated: 2026-08-05T06:19:14.755Z
+// License: MIT — Free forever
+
+module field_survey;
+
+import frontier.ui.{Screen, Button, List, TextInput, Card, Navigation};
+import frontier.storage.{Database, Query, Sync};
+import frontier.hardware.{GPS, Camera, Barcode};
+
+type Survey = { id: Int, title: String, description: String, questions: Vec<Question>, created_at: String }
+type Question = { id: Int, survey_id: Int, text: String, type: String, options: Vec<String> }
+type Response = { id: Int, survey_id: Int, question_id: Int, answer: String, respondent: String }
+type Location = { lat: Float, lng: Float, name: String, address: String }
+
+fn init_database() -> Result<Database, String> {
+  let db = Database::open("field_survey.db")?;
+  db.create_table("surveys", [
+    ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
+    ("data", "TEXT"),
+    ("created_at", "TEXT DEFAULT (datetime('now'))"),
+    ("updated_at", "TEXT DEFAULT (datetime('now'))"),
+  ])?;
+  Ok(db)
+}
+
+fn create(data: String) -> Result<Int, String> {
+  let db = init_database()?;
+  Ok(db.insert("surveys", data)?)
+}
+
+fn list_all() -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM surveys ORDER BY created_at DESC")?)
+}
+
+fn search(query: String) -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM surveys WHERE data LIKE ?", ["%" + query + "%"])?)
+}
+
+fn custom_forms() -> Result<(), String> {
+  // Custom forms
+  Ok(())
+}
+
+fn gps_tagging() -> Result<(), String> {
+  // GPS tagging
+  Ok(())
+}
+
+fn photo_attachments() -> Result<(), String> {
+  // Photo attachments
+  Ok(())
+}
+
+fn csv_export() -> Result<(), String> {
+  // CSV export
+  Ok(())
+}
+
+fn main() -> void {
+  let screen = Screen::new("Field Survey");
+  screen.set_icon("📋");
+  let _ = init_database();
+
+  let search_bar = TextInput::new("search");
+  search_bar.set_placeholder("Search...");
+  screen.add_widget(search_bar);
+
+  screen.add_button("add_new", "➕ Add New", "show_add_form");
+
+  let list = List::new("records");
+  for record in list_all().unwrap_or([]) {
+    list.add_card(Card::new(record));
+  }
+  screen.add_list(list);
+  screen.render();
+}

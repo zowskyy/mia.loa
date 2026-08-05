@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-08-05T06:19:14.756Z",
+  "templates": [
+    {
+      "name": "water-tracker",
+      "description": "Water pump maintenance and repair tracking",
+      "icon": "🚰",
+      "category": "infrastructure"
+    },
+    {
+      "name": "clinic-records",
+      "description": "Patient records and appointment management for rural clinics",
+      "icon": "🏥",
+      "category": "health"
+    },
+    {
+      "name": "market-prices",
+      "description": "Crop price comparison and market finder for farmers",
+      "icon": "🌾",
+      "category": "agriculture"
+    },
+    {
+      "name": "school-attendance",
+      "description": "Student attendance and grade tracking for village schools",
+      "icon": "📚",
+      "category": "education"
+    },
+    {
+      "name": "inventory-manager",
+      "description": "Stock tracking for small shops and cooperatives",
+      "icon": "📦",
+      "category": "business"
+    },
+    {
+      "name": "community-ledger",
+      "description": "Micro-loan and savings group management",
+      "icon": "💰",
+      "category": "finance"
+    },
+    {
+      "name": "field-survey",
+      "description": "Offline data collection for community surveys",
+      "icon": "📋",
+      "category": "research"
+    },
+    {
+      "name": "event-planner",
+      "description": "Community event organization and attendance",
+      "icon": "🎉",
+      "category": "community"
+    }
+  ]
+}

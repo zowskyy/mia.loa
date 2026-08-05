@@ -1,0 +1,22 @@
+{
+  "name": "market-prices",
+  "version": "1.0.0",
+  "description": "Crop price comparison and market finder for farmers",
+  "icon": "🌾",
+  "category": "agriculture",
+  "author": "Lighthouse Community",
+  "license": "MIT",
+  "fields": [
+    "Crop",
+    "MarketPrice",
+    "Vendor"
+  ],
+  "features": [
+    "Price comparison",
+    "Market locator",
+    "Price history",
+    "Offline caching"
+  ],
+  "generatedBy": "Lighthouse ARC Engine",
+  "generatedDate": "2026-08-05T06:19:14.754Z"
+}

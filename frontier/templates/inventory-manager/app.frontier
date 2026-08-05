@@ -1,0 +1,79 @@
+// Inventory Manager — Lighthouse Community Template
+// Stock tracking for small shops and cooperatives
+// Generated: 2026-08-05T06:19:14.754Z
+// License: MIT — Free forever
+
+module inventory_manager;
+
+import frontier.ui.{Screen, Button, List, TextInput, Card, Navigation};
+import frontier.storage.{Database, Query, Sync};
+import frontier.hardware.{GPS, Camera, Barcode};
+
+type Product = { id: Int, name: String, sku: String, quantity: Int, price: Float, reorder_level: Int }
+type Stock = { id: Int, product_id: Int, quantity: Int, location: String, last_updated: String }
+type Sale = { id: Int, product_id: Int, quantity: Int, total: Float, date: String, customer: String }
+type Supplier = { id: Int, name: String, contact: String, products: Vec<Int>, lead_time: Int }
+
+fn init_database() -> Result<Database, String> {
+  let db = Database::open("inventory_manager.db")?;
+  db.create_table("products", [
+    ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
+    ("data", "TEXT"),
+    ("created_at", "TEXT DEFAULT (datetime('now'))"),
+    ("updated_at", "TEXT DEFAULT (datetime('now'))"),
+  ])?;
+  Ok(db)
+}
+
+fn create(data: String) -> Result<Int, String> {
+  let db = init_database()?;
+  Ok(db.insert("products", data)?)
+}
+
+fn list_all() -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM products ORDER BY created_at DESC")?)
+}
+
+fn search(query: String) -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM products WHERE data LIKE ?", ["%" + query + "%"])?)
+}
+
+fn scan_barcode() -> Result<String, String> {
+  Ok(Barcode::scan()?.data)
+}
+
+fn check_low_stock() -> Result<Vec<Product>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM products WHERE quantity <= reorder_level")?)
+}
+
+fn sales_reports() -> Result<(), String> {
+  // Sales reports
+  Ok(())
+}
+
+fn supplier_management() -> Result<(), String> {
+  // Supplier management
+  Ok(())
+}
+
+fn main() -> void {
+  let screen = Screen::new("Inventory Manager");
+  screen.set_icon("📦");
+  let _ = init_database();
+
+  let search_bar = TextInput::new("search");
+  search_bar.set_placeholder("Search...");
+  screen.add_widget(search_bar);
+
+  screen.add_button("add_new", "➕ Add New", "show_add_form");
+
+  let list = List::new("records");
+  for record in list_all().unwrap_or([]) {
+    list.add_card(Card::new(record));
+  }
+  screen.add_list(list);
+  screen.render();
+}

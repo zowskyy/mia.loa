@@ -1,0 +1,81 @@
+// Event Planner — Lighthouse Community Template
+// Community event organization and attendance
+// Generated: 2026-08-05T06:19:14.756Z
+// License: MIT — Free forever
+
+module event_planner;
+
+import frontier.ui.{Screen, Button, List, TextInput, Card, Navigation};
+import frontier.storage.{Database, Query, Sync};
+import frontier.hardware.{GPS, Camera, Barcode};
+
+type Event = { id: Int, title: String, description: String, date: String, location: String, budget: Float }
+type Attendee = { id: Int, event_id: Int, name: String, rsvp: String, notes: String }
+type Task = { id: Int, event_id: Int, description: String, assigned_to: String, due_date: String, status: String }
+type Budget = { id: Int, event_id: Int, category: String, allocated: Float, spent: Float }
+
+fn init_database() -> Result<Database, String> {
+  let db = Database::open("event_planner.db")?;
+  db.create_table("events", [
+    ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
+    ("data", "TEXT"),
+    ("created_at", "TEXT DEFAULT (datetime('now'))"),
+    ("updated_at", "TEXT DEFAULT (datetime('now'))"),
+  ])?;
+  Ok(db)
+}
+
+fn create(data: String) -> Result<Int, String> {
+  let db = init_database()?;
+  Ok(db.insert("events", data)?)
+}
+
+fn list_all() -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM events ORDER BY created_at DESC")?)
+}
+
+fn search(query: String) -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM events WHERE data LIKE ?", ["%" + query + "%"])?)
+}
+
+fn update_rsvp(event_id: Int, attendee_id: Int, status: String) -> Result<(), String> {
+  let db = init_database()?;
+  db.execute("UPDATE attendees SET rsvp = ? WHERE id = ? AND event_id = ?", [status, attendee_id, event_id])?;
+  Ok(())
+}
+
+fn task_assignment() -> Result<(), String> {
+  // Task assignment
+  Ok(())
+}
+
+fn budget_management() -> Result<(), String> {
+  // Budget management
+  Ok(())
+}
+
+fn reminders() -> Result<(), String> {
+  // Reminders
+  Ok(())
+}
+
+fn main() -> void {
+  let screen = Screen::new("Event Planner");
+  screen.set_icon("🎉");
+  let _ = init_database();
+
+  let search_bar = TextInput::new("search");
+  search_bar.set_placeholder("Search...");
+  screen.add_widget(search_bar);
+
+  screen.add_button("add_new", "➕ Add New", "show_add_form");
+
+  let list = List::new("records");
+  for record in list_all().unwrap_or([]) {
+    list.add_card(Card::new(record));
+  }
+  screen.add_list(list);
+  screen.render();
+}

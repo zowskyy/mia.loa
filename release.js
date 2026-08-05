@@ -90,8 +90,9 @@ const PLATFORMS = {
 
 const CORE_FILES = [
   'core.js', 'setup.js', 'package.json', 'README.md',
-  'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js',
+  'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js', 'assemble.js',
   'lib/frontier.js', 'lib/frontier-codegen.js', 'lib/frontier-mobile.js',
+  'lib/discovery-engine.js', 'lib/package-registry.js',
   'scripts/frontier-codegen.js', 'scripts/build-frontier-mobile.js',
   'scripts/build-frontier-server.js', 'scripts/build-frontier-standalone.js',
   'scripts/frontier-cross-compile.js', 'scripts/frontier-single-binary.js',
@@ -715,8 +716,8 @@ async function buildCommunityKit() {
 
   const COPY_ROOT_ITEMS = [
     'core.js', 'setup.js', 'package.json', 'README.md', 'RELEASE_NOTES.md',
-    'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js', 'deploy.sh', 'release.sh',
-    'RELEASE_CHECKLIST.md', 'public', 'mobile', 'models'
+    'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js', 'assemble.js', 'deploy.sh', 'release.sh',
+    'RELEASE_CHECKLIST.md', 'public', 'mobile', 'models', 'lib', 'frontier', 'registry', 'scripts'
   ];
 
   for (const item of COPY_ROOT_ITEMS) {

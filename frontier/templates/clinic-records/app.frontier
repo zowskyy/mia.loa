@@ -1,0 +1,78 @@
+// Clinic Records — Lighthouse Community Template
+// Patient records and appointment management for rural clinics
+// Generated: 2026-08-05T06:19:14.753Z
+// License: MIT — Free forever
+
+module clinic_records;
+
+import frontier.ui.{Screen, Button, List, TextInput, Card, Navigation};
+import frontier.storage.{Database, Query, Sync};
+import frontier.hardware.{GPS, Camera, Barcode};
+
+type Patient = { id: Int, name: String, age: Int, village: String, phone: String, medical_history: String }
+type Visit = { id: Int, patient_id: Int, date: String, symptoms: String, diagnosis: String, treatment: String }
+type Prescription = { id: Int, visit_id: Int, medication: String, dosage: String, duration: String }
+
+fn init_database() -> Result<Database, String> {
+  let db = Database::open("clinic_records.db")?;
+  db.create_table("patients", [
+    ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
+    ("data", "TEXT"),
+    ("created_at", "TEXT DEFAULT (datetime('now'))"),
+    ("updated_at", "TEXT DEFAULT (datetime('now'))"),
+  ])?;
+  Ok(db)
+}
+
+fn create(data: String) -> Result<Int, String> {
+  let db = init_database()?;
+  Ok(db.insert("patients", data)?)
+}
+
+fn list_all() -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM patients ORDER BY created_at DESC")?)
+}
+
+fn search(query: String) -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM patients WHERE data LIKE ?", ["%" + query + "%"])?)
+}
+
+fn search_patients(query: String) -> Result<Vec<Patient>, String> {
+  search(query).map(|r| r)
+}
+
+fn visit_history() -> Result<(), String> {
+  // Visit history
+  Ok(())
+}
+
+fn prescription_tracking() -> Result<(), String> {
+  // Prescription tracking
+  Ok(())
+}
+
+fn privacy_focused() -> Result<(), String> {
+  // Privacy-focused
+  Ok(())
+}
+
+fn main() -> void {
+  let screen = Screen::new("Clinic Records");
+  screen.set_icon("🏥");
+  let _ = init_database();
+
+  let search_bar = TextInput::new("search");
+  search_bar.set_placeholder("Search...");
+  screen.add_widget(search_bar);
+
+  screen.add_button("add_new", "➕ Add New", "show_add_form");
+
+  let list = List::new("records");
+  for record in list_all().unwrap_or([]) {
+    list.add_card(Card::new(record));
+  }
+  screen.add_list(list);
+  screen.render();
+}

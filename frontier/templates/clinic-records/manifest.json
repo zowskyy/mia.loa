@@ -1,0 +1,22 @@
+{
+  "name": "clinic-records",
+  "version": "1.0.0",
+  "description": "Patient records and appointment management for rural clinics",
+  "icon": "🏥",
+  "category": "health",
+  "author": "Lighthouse Community",
+  "license": "MIT",
+  "fields": [
+    "Patient",
+    "Visit",
+    "Prescription"
+  ],
+  "features": [
+    "Patient search",
+    "Visit history",
+    "Prescription tracking",
+    "Privacy-focused"
+  ],
+  "generatedBy": "Lighthouse ARC Engine",
+  "generatedDate": "2026-08-05T06:19:14.754Z"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "event-planner",
+  "version": "1.0.0",
+  "description": "Community event organization and attendance",
+  "icon": "🎉",
+  "category": "community",
+  "author": "Lighthouse Community",
+  "license": "MIT",
+  "fields": [
+    "Event",
+    "Attendee",
+    "Task",
+    "Budget"
+  ],
+  "features": [
+    "RSVP tracking",
+    "Task assignment",
+    "Budget management",
+    "Reminders"
+  ],
+  "generatedBy": "Lighthouse ARC Engine",
+  "generatedDate": "2026-08-05T06:19:14.756Z"
+}

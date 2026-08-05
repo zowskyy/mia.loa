@@ -86,13 +86,21 @@ async function handleARC(request) {
         try {
           const data = JSON.parse(line.slice(6));
 
-          if (data.stage) {
+          if (data.direct) {
+            addMsg(formatDiscoveryMessage(data), 'agent');
+          }
+
+          if (data.status && typeof data.stage === 'string') {
+            setStage(data.stage,
+              data.status === 'done' ? 'done' :
+              data.status === 'refining' ? 'active' : 'active');
+            if (data.status === 'refining') {
+              addMsg('🔄 Refining code based on review...', 'system');
+            }
+          } else if (data.stage?.stage) {
             setStage(data.stage.stage,
               data.stage.status === 'done' ? 'done' :
               data.stage.status === 'refining' ? 'active' : 'active');
-            if (data.stage.status === 'refining') {
-              addMsg('🔄 Refining code based on review...', 'system');
-            }
           }
 
           if (data.plan?.steps) {
@@ -160,6 +168,7 @@ async function handleIdea(idea) {
   d.questions?.forEach((q, i) => { t += `${i + 1}. ${q}<br>`; });
   t += '<br><em>Answer these and I will build it.</em>';
   addMsg(t, 'agent');
+  if (d.discovery) addMsg(formatDiscoveryMessage(d.discovery), 'agent');
   document.getElementById('inp').value = 'Answers:\n1. ';
   document.getElementById('inp').focus();
 }
@@ -322,6 +331,46 @@ async function saveProject() {
     body: JSON.stringify({ name: n, files })
   });
   addMsg('✅ Saved!', 'system');
+}
+
+function formatDiscoveryMessage(discovery) {
+  if (!discovery?.direct) return '';
+
+  let html = `<b>✅ ${discovery.direct.summary}</b><br>`;
+  html += `<em>${discovery.direct.whatHappensNext}</em>`;
+
+  if (discovery.direct.desiredOutcome) {
+    html += `<br><br><b>🎯 Success looks like:</b><br>${discovery.direct.desiredOutcome}`;
+  }
+
+  const enablers = discovery.connections?.worthKnowing || [];
+  if (enablers.length) {
+    html += '<br><br><b>While that runs, you might want to know:</b>';
+    enablers.slice(0, 3).forEach(c => {
+      html += `<br><br>📍 <b>${c.what}</b><br>${c.why}`;
+      if (c.howMuchDifference) html += `<br><em>${c.howMuchDifference}</em>`;
+    });
+  }
+
+  const adjacent = discovery.connections?.likelyRelevantNow || [];
+  if (adjacent.length) {
+    html += '<br><br><b>Related possibilities:</b>';
+    adjacent.slice(0, 2).forEach(c => {
+      html += `<br>• <b>${c.what}</b> — ${c.why}`;
+    });
+  }
+
+  if (discovery.stories?.length) {
+    const story = discovery.stories[0];
+    html += `<br><br><b>💡 Someone like you did this:</b><br>`;
+    html += `"${story.who} — ${story.solution} ${story.outcome}"`;
+  }
+
+  if (discovery.principles?.length) {
+    html += `<br><br><em>${discovery.principles[0]}</em>`;
+  }
+
+  return html;
 }
 
 function addMsg(text, role) {

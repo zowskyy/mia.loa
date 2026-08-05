@@ -1,0 +1,79 @@
+// Market Prices — Lighthouse Community Template
+// Crop price comparison and market finder for farmers
+// Generated: 2026-08-05T06:19:14.754Z
+// License: MIT — Free forever
+
+module market_prices;
+
+import frontier.ui.{Screen, Button, List, TextInput, Card, Navigation};
+import frontier.storage.{Database, Query, Sync};
+import frontier.hardware.{GPS, Camera, Barcode};
+
+type Crop = { id: Int, name: String, variety: String, season: String, expected_yield: Float }
+type MarketPrice = { id: Int, crop_id: Int, market: String, price: Float, date: String, currency: String }
+type Vendor = { id: Int, name: String, market: String, phone: String, rating: Float }
+
+fn init_database() -> Result<Database, String> {
+  let db = Database::open("market_prices.db")?;
+  db.create_table("crops", [
+    ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
+    ("data", "TEXT"),
+    ("created_at", "TEXT DEFAULT (datetime('now'))"),
+    ("updated_at", "TEXT DEFAULT (datetime('now'))"),
+  ])?;
+  Ok(db)
+}
+
+fn create(data: String) -> Result<Int, String> {
+  let db = init_database()?;
+  Ok(db.insert("crops", data)?)
+}
+
+fn list_all() -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM crops ORDER BY created_at DESC")?)
+}
+
+fn search(query: String) -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM crops WHERE data LIKE ?", ["%" + query + "%"])?)
+}
+
+fn compare_prices(crop_id: Int) -> Result<Vec<MarketPrice>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM market_prices WHERE crop_id = ? ORDER BY price ASC", [crop_id])?)
+}
+
+fn market_locator() -> Result<(), String> {
+  // Market locator
+  Ok(())
+}
+
+fn price_history() -> Result<(), String> {
+  // Price history
+  Ok(())
+}
+
+fn offline_caching() -> Result<(), String> {
+  // Offline caching
+  Ok(())
+}
+
+fn main() -> void {
+  let screen = Screen::new("Market Prices");
+  screen.set_icon("🌾");
+  let _ = init_database();
+
+  let search_bar = TextInput::new("search");
+  search_bar.set_placeholder("Search...");
+  screen.add_widget(search_bar);
+
+  screen.add_button("add_new", "➕ Add New", "show_add_form");
+
+  let list = List::new("records");
+  for record in list_all().unwrap_or([]) {
+    list.add_card(Card::new(record));
+  }
+  screen.add_list(list);
+  screen.render();
+}
