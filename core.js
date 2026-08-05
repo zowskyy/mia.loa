@@ -451,6 +451,32 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+function getNetworkAddresses() {
+  const interfaces = require('os').networkInterfaces();
+  const addresses = [];
+  for (const nets of Object.values(interfaces)) {
+    for (const net of nets) {
+      if (net.family === 'IPv4' && !net.internal) {
+        addresses.push(`http://${net.address}:${PORT}`);
+      }
+    }
+  }
+  return addresses;
+}
+
+app.get('/api/connect', (req, res) => {
+  const addresses = getNetworkAddresses();
+  const primary = addresses[0] || `http://localhost:${PORT}`;
+  res.json({
+    addresses,
+    url: primary,
+    qrCode: addresses.length > 0
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(primary)}`
+      : null,
+    instructions: 'Scan QR code with your phone camera to open Lighthouse'
+  });
+});
+
 app.get('/api/model', (req, res) => {
   if (!existsSync(MODEL_FILE)) {
     return res.json({ exists: false, message: 'No model. Run: node setup.js' });
@@ -741,6 +767,11 @@ async function start() {
     console.log(`📁 Projects: ${PROJECT_DIR}`);
     console.log(`📦 Model: ${existsSync(MODEL_FILE) ? basename(MODEL_FILE) : 'not downloaded'}`);
     console.log(`🖥️  Open http://localhost:${PORT} in any browser`);
+
+    const addresses = getNetworkAddresses();
+    if (addresses.length > 0) {
+      console.log(`📱 Phone:  ${addresses[0]}  (QR: /api/connect)`);
+    }
 
     if (backend === 'mock') {
       console.log(`\n💡 LEARNING MODE — download a model for full AI coding:`);

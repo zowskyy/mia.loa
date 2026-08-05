@@ -1,7 +1,7 @@
 // Lighthouse Service Worker — Offline caching
-const CACHE = 'lighthouse-v1';
+const CACHE = 'lighthouse-v2';
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/','/index.html','/client.js'])));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/','/index.html','/client.js','/mobile.js','/mobile.css'])));
   self.skipWaiting();
 });
 self.addEventListener('activate', e => {

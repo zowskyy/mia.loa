@@ -1,0 +1,20 @@
+/* Mobile-specific enhancements */
+@media (max-width: 480px) {
+  header { padding: 8px 12px; }
+  .logo { font-size: 16px; }
+  .status { font-size: 10px; }
+  .stages { padding: 6px 8px; gap: 2px; }
+  .stage { padding: 4px 8px; font-size: 10px; }
+  main { padding: 8px; gap: 6px; }
+  .msg { max-width: 95%; padding: 10px 12px; font-size: 13px; }
+  footer { padding: 8px 12px; gap: 4px; }
+  footer textarea { font-size: 16px; }
+  footer button { padding: 8px 12px; font-size: 14px; }
+  footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  header { padding-top: max(8px, env(safe-area-inset-top)); }
+}
+
+#micBtn.listening {
+  color: var(--a) !important;
+  border-color: var(--a) !important;
+}
