@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0a1a">
+<title>Lighthouse — Investor Preview</title>
+<style>
+:root{--bg:#0a0a1a;--s1:#12122a;--s2:#1a1a3a;--b:#2a2a4a;--t:#e0e0f0;--t2:#8888aa;--a:#ff4d6a;--g:#4ecca3;--y:#f0a500}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t);line-height:1.5}
+.hero{background:linear-gradient(135deg,#12122a 0%,#1a1a3a 50%,#0a0a1a 100%);padding:48px 24px 32px;text-align:center;border-bottom:1px solid var(--b)}
+.logo{font-size:42px;font-weight:800;background:linear-gradient(135deg,var(--a),#ff8a65);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.tagline{font-size:18px;color:var(--t2);max-width:560px;margin:0 auto 24px}
+.live{display:inline-flex;align-items:center;gap:8px;background:rgba(78,204,163,.15);color:var(--g);padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600}
+.live::before{content:'';width:8px;height:8px;background:var(--g);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.wrap{max-width:1100px;margin:0 auto;padding:24px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin:24px 0}
+.metric{background:var(--s1);border:1px solid var(--b);border-radius:16px;padding:20px;text-align:center}
+.metric .val{font-size:32px;font-weight:700;color:var(--g)}
+.metric .lbl{font-size:12px;color:var(--t2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin:24px 0}
+.card{background:var(--s1);border:1px solid var(--b);border-radius:16px;padding:24px}
+.card h2{font-size:16px;margin-bottom:12px;color:var(--a)}
+.card p,.card li{color:var(--t2);font-size:14px}
+.card ul{margin:8px 0 0 18px}
+.card li{margin:6px 0}
+.btn{display:inline-block;margin-top:16px;padding:12px 24px;background:var(--a);color:#fff;text-decoration:none;border-radius:12px;font-weight:600;font-size:14px;margin-right:8px}
+.btn.secondary{background:var(--s2);border:1px solid var(--b);color:var(--t)}
+iframe{width:100%;height:420px;border:1px solid var(--b);border-radius:12px;background:#000;margin-top:12px}
+.tiers{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tier{background:var(--s2);border:1px solid var(--b);padding:6px 12px;border-radius:20px;font-size:12px}
+.tier.done{border-color:var(--g);color:var(--g)}
+footer{text-align:center;padding:32px;color:var(--t2);font-size:12px;border-top:1px solid var(--b);margin-top:32px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo">⚡ Lighthouse</div>
+  <p class="tagline">Free offline AI coding agent for the 3 billion people priced out of AI tools. Runs on $35 hardware. No subscription. Ever.</p>
+  <div class="live" id="liveStatus">● LIVE — connecting...</div>
+</div>
+
+<div class="wrap">
+  <div class="metrics" id="metrics">
+    <div class="metric"><div class="val" id="mVersion">—</div><div class="lbl">Version</div></div>
+    <div class="metric"><div class="val" id="mBackend">—</div><div class="lbl">Backend</div></div>
+    <div class="metric"><div class="val" id="mUptime">—</div><div class="lbl">Uptime (sec)</div></div>
+    <div class="metric"><div class="val" id="mImpact">—</div><div class="lbl">Impact Events</div></div>
+    <div class="metric"><div class="val">$0</div><div class="lbl">Cost Per User</div></div>
+    <div class="metric"><div class="val">$138</div><div class="lbl">Community Kit</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>🎯 The Problem</h2>
+      <p>AI coding assistants cost $20–40/month and need reliable internet. Communities that could benefit most — farmers, clinics, schools — are locked out.</p>
+    </div>
+    <div class="card">
+      <h2>💡 The Solution</h2>
+      <p>Describe an idea in any language. Lighthouse analyzes, plans, codes, and self-reviews — fully offline on a Raspberry Pi or old phone.</p>
+    </div>
+    <div class="card">
+      <h2>📱 Mobile Stack (Live)</h2>
+      <div class="tiers">
+        <span class="tier done">Tier 1: PWA</span>
+        <span class="tier done">Tier 2: Capacitor</span>
+        <span class="tier done">Tier 3: WebLLM</span>
+      </div>
+      <ul>
+        <li>Voice input, share sheet, QR connect</li>
+        <li>Native Android/iOS app shell</li>
+        <li>On-device AI via WebGPU (experimental)</li>
+      </ul>
+      <a class="btn" href="/" target="_blank">Open Live App →</a>
+      <a class="btn secondary" href="/connect.html" target="_blank">QR Connect</a>
+    </div>
+    <div class="card">
+      <h2>🌍 Field Deployment</h2>
+      <ul>
+        <li>6 regions, 9 languages</li>
+        <li>Community Kit for Raspberry Pi</li>
+        <li>Navigator training (Bronze → Gold)</li>
+        <li>Impact tracking dashboard</li>
+      </ul>
+      <a class="btn secondary" href="/impact/dashboard.html" target="_blank">Impact Dashboard →</a>
+    </div>
+    <div class="card">
+      <h2>🧠 ARC Cycle Demo</h2>
+      <p>Try: <em>"Build a tool to track water pump maintenance"</em></p>
+      <p style="margin-top:8px;font-size:12px">Analysis → Plan → Code → Self-Review (streaming)</p>
+      <a class="btn" href="/" target="_blank">Run Demo Now →</a>
+    </div>
+    <div class="card">
+      <h2>📊 Unit Economics</h2>
+      <ul>
+        <li><strong>$138</strong> — one Community Kit (RPi + solar option)</li>
+        <li><strong>$25</strong> — cost per person served (Year 1)</li>
+        <li><strong>$8</strong> — projected by Year 3</li>
+        <li><strong>MIT license</strong> — free forever</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:8px">
+    <h2>🖥️ Live Product Preview</h2>
+    <p style="color:var(--t2);font-size:13px;margin-bottom:8px">Embedded live instance — interact below or open full screen.</p>
+    <iframe src="/" title="Lighthouse App"></iframe>
+  </div>
+</div>
+
+<footer>
+  Lighthouse v1.0.1 · MIT License · Free forever · github.com/zowskyy/mia.loa
+</footer>
+
+<script>
+async function refresh() {
+  try {
+    const [health, impact] = await Promise.all([
+      fetch('/api/health').then(r => r.json()),
+      fetch('/api/impact').then(r => r.json()).catch(() => ({ total: 0 }))
+    ]);
+    document.getElementById('mVersion').textContent = health.version || '1.0.1';
+    document.getElementById('mBackend').textContent = health.backend || 'ready';
+    document.getElementById('mUptime').textContent = health.uptime || 0;
+    document.getElementById('mImpact').textContent = impact.total || 0;
+    const mode = health.backend === 'mock' ? 'Learning mode (demo)' : 'AI model ready';
+    document.getElementById('liveStatus').textContent = `● LIVE — ${mode} · ${health.requests || 0} requests`;
+  } catch {
+    document.getElementById('liveStatus').textContent = '● OFFLINE';
+  }
+}
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

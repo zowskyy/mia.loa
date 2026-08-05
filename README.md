@@ -59,11 +59,32 @@ Requires Chrome 127+ with WebGPU and 8GB+ RAM. Enable via the header toggle. See
 - 💾 **Projects** — Save and load your work
 - 🖥️ **CLI** — Terminal mode for headless systems
 
+## Field deployment
+
+```bash
+node deploy.js test                    # Verify readiness
+node deploy.js ship east-africa        # Full kit + docs + training + partners
+node deploy.js kit south-asia          # Community Kit only
+./deploy.sh all global                 # Shell wrapper
+```
+
+Regions: `east-africa`, `south-asia`, `southeast-asia`, `latin-america`, `west-africa`, `global`
+
+Output goes to `deploy/` — Community Kits, offline docs, i18n, Navigator training, partner packages, impact dashboard.
+
 ## Release builds
+
+**CI/CD (ships all 13 formats):** push a version tag and GitHub Actions builds everything:
+
+```bash
+git tag v1.0.2 && git push origin v1.0.2
+```
+
+**Manual:**
 
 ```bash
 node release.js --dry-run
-node release.js --all
+node release.js all
 ```
 
 See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).

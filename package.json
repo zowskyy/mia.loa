@@ -8,7 +8,9 @@
     "start": "node core.js",
     "setup": "node setup.js",
     "release": "node release.js",
-    "mobile:build": "node mobile/capacitor/build-mobile.js"
+    "mobile:build": "node mobile/capacitor/build-mobile.js",
+    "deploy": "node deploy.js",
+    "deploy:ship": "node deploy.js ship"
   },
   "dependencies": {
     "express": "^4.21.0"

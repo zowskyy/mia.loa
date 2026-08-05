@@ -1,0 +1,331 @@
+name: Build All Release Formats
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 1.0.2 — leave empty to use package.json)'
+        required: false
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # ─── Cache the ~4GB model once for model-inclusive desktop builds ───
+  download-model:
+    name: Download AI model (cache)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');"
+          node -e "const fs=require('fs');const p='mobile/capacitor/package.json';const j=JSON.parse(fs.readFileSync(p));j.version='$VERSION';fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore model cache
+        id: model-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: models
+          key: lighthouse-model-${{ hashFiles('setup.js') }}
+
+      - name: Download model
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        run: node setup.js
+        timeout-minutes: 90
+        continue-on-error: true
+
+      - name: Save model cache
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: models
+          key: lighthouse-model-${{ hashFiles('setup.js') }}
+
+  # ─── Desktop (6 platforms) ───────────────────────────────────────────
+  build-desktop:
+    name: Desktop (${{ matrix.platform }})
+    needs: download-model
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x64
+            os: ubuntu-latest
+          - platform: linux-arm64
+            os: ubuntu-latest
+          - platform: linux-armv7l
+            os: ubuntu-latest
+          - platform: macos-x64
+            os: macos-13
+          - platform: macos-arm64
+            os: macos-latest
+          - platform: windows-x64
+            os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore model cache
+        uses: actions/cache/restore@v4
+        with:
+          path: models
+          key: lighthouse-model-${{ hashFiles('setup.js') }}
+
+      - name: Install dependencies
+        run: npm install --production
+
+      - name: Build ${{ matrix.platform }} archive
+        run: node release.js ${{ matrix.platform }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform }}
+          path: |
+            releases/lighthouse-*-${{ matrix.platform }}.*
+          retention-days: 7
+          if-no-files-found: error
+
+  # ─── Android APK ─────────────────────────────────────────────────────
+  build-android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Install SDK packages
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install root dependencies
+        run: npm install --production
+
+      - name: Build Android APK (arm64 + armv7 alias)
+        run: node release.js android-arm64
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: |
+            releases/lighthouse-*-android-arm64.apk
+            releases/lighthouse-*-android-armv7.apk
+          retention-days: 7
+          if-no-files-found: error
+
+  # ─── iOS Xcode project ───────────────────────────────────────────────
+  build-ios:
+    name: iOS Xcode project
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install root dependencies
+        run: npm install --production
+
+      - name: Build iOS project archive
+        run: node release.js ios
+
+      - name: Upload iOS project
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-project
+          path: releases/lighthouse-*-ios.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  # ─── Docker image ────────────────────────────────────────────────────
+  build-docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm install --production
+
+      - name: Build Docker image tarball
+        run: node release.js docker
+
+      - name: Upload Docker image
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: releases/lighthouse-*-docker.tar
+          retention-days: 7
+          if-no-files-found: error
+
+  # ─── Portable + special builds ───────────────────────────────────────
+  build-special:
+    name: Portable + special builds
+    needs: download-model
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore model cache
+        uses: actions/cache/restore@v4
+        with:
+          path: models
+          key: lighthouse-model-${{ hashFiles('setup.js') }}
+
+      - name: Install dependencies
+        run: npm install --production
+
+      - name: Build portable, RPi installer, community kit
+        run: |
+          node release.js portable
+          node release.js rpi-installer
+          node release.js community-kit
+
+      - name: Upload special builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: special-builds
+          path: |
+            releases/lighthouse-*-portable.zip
+            releases/lighthouse-*-rpi-installer.tar.gz
+            releases/lighthouse-*-community-kit.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  # ─── Publish GitHub Release ──────────────────────────────────────────
+  publish-release:
+    name: Publish GitHub Release
+    needs:
+      - build-desktop
+      - build-android
+      - build-ios
+      - build-docker
+      - build-special
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+          merge-multiple: true
+
+      - name: Consolidate release files
+        run: |
+          mkdir -p releases
+          find all-artifacts -type f \( \
+            -name "lighthouse-*.tar.gz" -o \
+            -name "lighthouse-*.zip" -o \
+            -name "lighthouse-*.apk" -o \
+            -name "lighthouse-*.tar" \
+          \) ! -name "lighthouse-latest-*" | while read -r f; do
+            cp "$f" "releases/$(basename "$f")"
+          done
+          ls -lh releases/
+
+      - name: Generate checksums, manifest, and release notes
+        run: node release.js assemble
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Lighthouse ${{ github.ref_name }} — Universal Release
+          body_path: releases/RELEASE_NOTES.md
+          files: |
+            releases/lighthouse-*
+            releases/SHA256SUMS
+            releases/manifest.json
+          fail_on_unmatched_files: false
+          draft: false
+          prerelease: false
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
