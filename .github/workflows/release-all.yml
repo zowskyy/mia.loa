@@ -112,9 +112,30 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
-  # ─── Android APK ─────────────────────────────────────────────────────
+  # ─── Frontier native mobile runtime (.so libraries) ──────────────────
+  build-frontier-mobile:
+    name: Frontier Mobile Runtime
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build native runtime (desktop + Android when NDK available)
+        run: bash mobile/build-native.sh
+
+      - name: Upload native libraries
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontier-native-libs
+          path: releases/native/
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ─── Android APK (Frontier native — no WebView) ────────────────────
   build-android:
-    name: Android APK
+    name: Android APK (Frontier native)
+    needs: build-frontier-mobile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -146,7 +167,17 @@ jobs:
       - name: Install root dependencies
         run: npm install --production
 
-      - name: Build Android APK (arm64 + armv7 alias)
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore native libraries
+        uses: actions/download-artifact@v4
+        with:
+          name: frontier-native-libs
+          path: releases/native
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Frontier native APK (arm64 + armv7 alias)
         run: node release.js android-arm64
         env:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
@@ -273,6 +304,7 @@ jobs:
     name: A+ Hard Gate
     needs:
       - build-desktop
+      - build-frontier-mobile
       - build-android
       - build-ios
       - build-docker
@@ -284,6 +316,7 @@ jobs:
     name: Publish GitHub Release
     needs:
       - build-desktop
+      - build-frontier-mobile
       - build-android
       - build-ios
       - build-docker

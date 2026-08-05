@@ -51,10 +51,15 @@ jobs:
             console.log('✅ Frontier lexer validation');
           "
 
-      - name: Gate 5 — Release builder dry-run
+      - name: Gate 5 — Frontier mobile runtime compiles
+        run: |
+          cd mobile/frontier-runtime
+          cargo test
+
+      - name: Gate 6 — Release builder dry-run
         run: node release.js --dry-run
 
-      - name: Gate 6 — Health endpoint starts
+      - name: Gate 7 — Health endpoint starts
         run: |
           timeout 8 node core.js &
           sleep 2

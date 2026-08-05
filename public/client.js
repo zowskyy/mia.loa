@@ -108,7 +108,7 @@ async function handleARC(request) {
             currentFiles = data.code.files;
             let html = '<b>💻 Generated Files:</b><br>';
             data.code.files.forEach(f => {
-              html += `<br><b>📄 ${f.path}</b> — ${f.description || ''}<br>`;
+              html += `<br><b>📄 ${f.path}</b>${f.language === 'frontier' ? ' ⚙️ <em>native</em>' : ''} — ${f.description || ''}<br>`;
             });
             const mid = addMsg(html, 'agent');
             const btns = document.createElement('div');

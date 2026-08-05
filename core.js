@@ -19,6 +19,7 @@ const {
 } = require('fs');
 const { join, basename, extname } = require('path');
 const { mountFrontierRoutes } = require('./lib/frontier');
+const { attachFrontierToArcResult } = require('./lib/frontier-codegen');
 
 // ═══════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -350,6 +351,7 @@ async function runARCCycle(request, context = {}, streamCallback = null) {
     ARC_SYSTEM.code
   );
   let code = parseJSON(codeRaw) || { files: [], explanation: codeRaw };
+  attachFrontierToArcResult({ plan, code, analysis, request });
   emit('stage', { stage: 'code', status: 'done', data: code });
 
   emit('stage', { stage: 'review', status: 'running' });
