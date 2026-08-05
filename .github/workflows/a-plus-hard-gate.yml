@@ -1,0 +1,84 @@
+name: A+ Hard Gate
+
+# Immutable self-auditing gate — same protocol as frontier-syntax.
+# Runs on every push/PR and before release publish.
+
+on:
+  push:
+    branches: [main, 'cursor/**']
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  hard-gate:
+    name: A+ Hard Gate verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Gate 1 — Core files present
+        run: |
+          for f in core.js setup.js package.json lib/frontier.js public/frontier-parser.js; do
+            test -f "$f" || { echo "Missing $f"; exit 1; }
+          done
+          echo "✅ Core files"
+
+      - name: Gate 2 — Frontier syntax assets (Cycle 1)
+        run: |
+          test -f public/syntax/token_regex_table.json
+          node -e "
+            const t = require('./public/syntax/token_regex_table.json');
+            if (!t.tokens || Object.keys(t.tokens).length < 40) throw new Error('Invalid token table');
+            console.log('✅', Object.keys(t.tokens).length, 'Frontier tokens');
+          "
+
+      - name: Gate 3 — Frontier bridge loads
+        run: node -e "const f=require('./lib/frontier'); console.log(JSON.stringify(f.getStatus()));"
+
+      - name: Gate 4 — Frontier validation API
+        run: |
+          node -e "
+            const { validateCode } = require('./lib/frontier');
+            const ok = validateCode('let x: int = 1;', { language: 'frontier' });
+            if (!ok.valid) throw new Error('Lexer failed on valid Frontier snippet');
+            console.log('✅ Frontier lexer validation');
+          "
+
+      - name: Gate 5 — Frontier mobile runtime compiles
+        run: |
+          cd mobile/frontier-runtime
+          cargo test
+
+      - name: Gate 6 — Frontier overhaul scripts
+        run: |
+          node scripts/frontier-codegen.js
+          node scripts/frontier-ui-bindings.js
+          node scripts/frontier-ai-bindings.js
+          test -f generated/water_pump_maintenance_tracker_for_village.fr || test -f generated/*.fr
+
+      - name: Gate 7 — Release builder dry-run
+        run: node release.js --dry-run
+
+      - name: Gate 8 — Health endpoint starts
+        run: |
+          timeout 8 node core.js &
+          sleep 2
+          curl -sf http://localhost:8899/api/health | node -e "
+            let d=''; process.stdin.on('data',c=>d+=c);
+            process.stdin.on('end',()=>{
+              const j=JSON.parse(d);
+              if (!j.frontier) throw new Error('Missing frontier status in /api/health');
+              console.log('✅ Health + frontier:', j.frontier.tokenTable);
+            });
+          "
+          pkill -f 'node core.js' || true
+
+      - name: Hard Gate report
+        run: echo "✅ All A+ Hard Gate checks passed"

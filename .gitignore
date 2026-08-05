@@ -3,10 +3,16 @@ models/
 projects/
 releases/
 deploy/
+generated/
+build/
 mobile/capacitor/node_modules/
 mobile/capacitor/www/
 mobile/capacitor/android/
 mobile/capacitor/ios/
+mobile/frontier-runtime/target/
+mobile/android-shell/.gradle/
+mobile/android-shell/app/build/
+mobile/android-shell/build/
 *.gguf
 .DS_Store
 NUL

@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Frontier Syntax Token Regex Table",
+  "version": "1.0.0",
+  "engine": "re2c",
+  "engine_version": "3.1",
+  "encoding": "UTF-8",
+  "normalization": "NFC",
+  "time_complexity": "O(n)",
+  "tokens": {
+    "KW_LET": {
+      "pattern": "let(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "let"
+    },
+    "KW_FN": {
+      "pattern": "fn(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "fn"
+    },
+    "KW_RETURN": {
+      "pattern": "return(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "return"
+    },
+    "KW_IF": {
+      "pattern": "if(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "if",
+      "note": "iff is banned as keyword; identifier iff is legal via PD-2"
+    },
+    "KW_ELSE": {
+      "pattern": "else(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "else"
+    },
+    "KW_TRUE": {
+      "pattern": "true(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "true"
+    },
+    "KW_FALSE": {
+      "pattern": "false(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "false"
+    },
+    "KW_NULL": {
+      "pattern": "null(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "null"
+    },
+    "KW_INT": {
+      "pattern": "int(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "int"
+    },
+    "KW_FLOAT": {
+      "pattern": "float(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "float"
+    },
+    "KW_BOOL": {
+      "pattern": "bool(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "bool"
+    },
+    "KW_STRING": {
+      "pattern": "string(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "string"
+    },
+    "KW_VOID": {
+      "pattern": "void(?![A-Za-z0-9_])",
+      "category": "keyword",
+      "literal": "void"
+    },
+    "IDENTIFIER": {
+      "pattern": "[A-Za-z_][A-Za-z0-9_]*",
+      "category": "identifier",
+      "constraint": "MUST NOT match any keyword literal"
+    },
+    "INTEGER_LITERAL": {
+      "pattern": "0|[1-9][0-9]*",
+      "category": "literal"
+    },
+    "FLOAT_LITERAL": {
+      "pattern": "0|[1-9][0-9]*\\.[0-9]+([eE][+-]?[0-9]+)?|[1-9][0-9]*\\.[0-9]*[eE][+-]?[0-9]+",
+      "category": "literal"
+    },
+    "STRING_LITERAL": {
+      "pattern": "\"([^\"\\\\\\n\\r]|\\\\[ntr\"\\\\])*\"",
+      "category": "literal",
+      "constraint": "Double quotes only. Single quotes are illegal."
+    },
+    "OP_EXPONENT": {
+      "pattern": "\\^",
+      "category": "operator",
+      "associativity": "right"
+    },
+    "OP_LOGICAL_OR": {
+      "pattern": "\\|\\|",
+      "category": "operator",
+      "precedence": 8,
+      "associativity": "left"
+    },
+    "OP_LOGICAL_AND": {
+      "pattern": "&&",
+      "category": "operator",
+      "precedence": 7,
+      "associativity": "left"
+    },
+    "OP_EQUAL": {
+      "pattern": "==",
+      "category": "operator",
+      "precedence": 6,
+      "associativity": "left"
+    },
+    "OP_NOT_EQUAL": {
+      "pattern": "!=",
+      "category": "operator",
+      "precedence": 6,
+      "associativity": "left"
+    },
+    "OP_LESS_EQUAL": {
+      "pattern": "<=",
+      "category": "operator",
+      "precedence": 5,
+      "associativity": "left"
+    },
+    "OP_GREATER_EQUAL": {
+      "pattern": ">=",
+      "category": "operator",
+      "precedence": 5,
+      "associativity": "left"
+    },
+    "OP_LESS": {
+      "pattern": "<",
+      "category": "operator",
+      "precedence": 5,
+      "associativity": "left"
+    },
+    "OP_GREATER": {
+      "pattern": ">",
+      "category": "operator",
+      "precedence": 5,
+      "associativity": "left"
+    },
+    "OP_PLUS": {
+      "pattern": "\\+",
+      "category": "operator",
+      "precedence": 4,
+      "associativity": "left"
+    },
+    "OP_MINUS": {
+      "pattern": "-",
+      "category": "operator",
+      "precedence": "4|2",
+      "associativity": "left",
+      "note": "Binary additive (prec 4) or unary negation (prec 2)"
+    },
+    "OP_MULTIPLY": {
+      "pattern": "\\*",
+      "category": "operator",
+      "precedence": 3,
+      "associativity": "left"
+    },
+    "OP_DIVIDE": {
+      "pattern": "/",
+      "category": "operator",
+      "precedence": 3,
+      "associativity": "left"
+    },
+    "OP_MODULO": {
+      "pattern": "%",
+      "category": "operator",
+      "precedence": 3,
+      "associativity": "left"
+    },
+    "OP_BANG": {
+      "pattern": "!",
+      "category": "operator",
+      "precedence": "2|suffix",
+      "note": "Unary not (prec 2) or required annotation (suffix)"
+    },
+    "OP_TILDE": {
+      "pattern": "~",
+      "category": "operator",
+      "precedence": 2,
+      "associativity": "right",
+      "note": "Unary bitwise not"
+    },
+    "OP_ASSIGN": {
+      "pattern": "=",
+      "category": "operator",
+      "precedence": 0,
+      "associativity": "right"
+    },
+    "OP_OPTIONAL": {
+      "pattern": "\\?",
+      "category": "annotation",
+      "note": "Optional type annotation suffix"
+    },
+    "LPAREN": {
+      "pattern": "\\(",
+      "category": "delimiter"
+    },
+    "RPAREN": {
+      "pattern": "\\)",
+      "category": "delimiter"
+    },
+    "LBRACE": {
+      "pattern": "\\{",
+      "category": "delimiter"
+    },
+    "RBRACE": {
+      "pattern": "\\}",
+      "category": "delimiter"
+    },
+    "LBRACKET": {
+      "pattern": "\\[",
+      "category": "delimiter"
+    },
+    "RBRACKET": {
+      "pattern": "\\]",
+      "category": "delimiter"
+    },
+    "COMMA": {
+      "pattern": ",",
+      "category": "delimiter"
+    },
+    "SEMICOLON": {
+      "pattern": ";",
+      "category": "delimiter"
+    },
+    "COLON": {
+      "pattern": ":",
+      "category": "delimiter"
+    },
+    "DOT": {
+      "pattern": "\\.",
+      "category": "delimiter",
+      "note": "Field access delimiter; not used for method calls"
+    },
+    "LINE_COMMENT": {
+      "pattern": "//[^\\n]*\\n",
+      "category": "comment",
+      "emits_token": false
+    },
+    "BLOCK_COMMENT": {
+      "pattern": "/\\*([^*]|\\*+[^*/])*\\*+/",
+      "category": "comment",
+      "emits_token": false
+    },
+    "WHITESPACE": {
+      "pattern": "[ \\t\\r\\n]+",
+      "category": "whitespace",
+      "emits_token": false
+    }
+  },
+  "prefix_disjointness": {
+    "rule": "PD-1 through PD-5 as defined in syntax/lexicon.ebnf §9",
+    "banned_pairs": ["if/iff as keyword"],
+    "longest_match_operators": ["==", "!=", "<=", ">=", "&&", "||"]
+  },
+  "match_priority": [
+    "LINE_COMMENT",
+    "BLOCK_COMMENT",
+    "WHITESPACE",
+    "keywords (longest first)",
+    "multi_char_operators",
+    "single_char_operators",
+    "FLOAT_LITERAL",
+    "INTEGER_LITERAL",
+    "STRING_LITERAL",
+    "IDENTIFIER"
+  ]
+}
