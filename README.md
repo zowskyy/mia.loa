@@ -105,6 +105,21 @@ Lighthouse generates code; [Frontier-Syntax](https://github.com/zowskyy/frontier
 
 Set `FRONTIER_HOME` to a local `frontier-syntax` checkout after `cargo build --release`.
 
+## Frontier total overhaul (dependency elimination)
+
+| Legacy | Frontier replacement | Script |
+|--------|---------------------|--------|
+| JavaScript ARC output | `.fr` native source | `npm run frontier:codegen` |
+| Capacitor / WebView | Native APK (~3MB) | `npm run frontier:mobile` |
+| Node.js + Express server | Static server binary | `npm run frontier:server` |
+| npm install + multi-file deploy | Single binary | `npm run frontier:single` |
+| Platform installers | Cross-compiled binaries | `npm run frontier:cross` |
+| WebLLM | llama.cpp FFI | `scripts/frontier-ai-bindings.js` |
+
+Run everything: `npm run frontier:standalone`
+
+Set `LIGHTHOUSE_OUTPUT=frontier` for ARC to emit **only** `.fr` files (no JS).
+
 ## Requirements
 
 - Node.js 18+

@@ -56,10 +56,17 @@ jobs:
           cd mobile/frontier-runtime
           cargo test
 
-      - name: Gate 6 — Release builder dry-run
+      - name: Gate 6 — Frontier overhaul scripts
+        run: |
+          node scripts/frontier-codegen.js
+          node scripts/frontier-ui-bindings.js
+          node scripts/frontier-ai-bindings.js
+          test -f generated/water_pump_maintenance_tracker_for_village.fr || test -f generated/*.fr
+
+      - name: Gate 7 — Release builder dry-run
         run: node release.js --dry-run
 
-      - name: Gate 7 — Health endpoint starts
+      - name: Gate 8 — Health endpoint starts
         run: |
           timeout 8 node core.js &
           sleep 2

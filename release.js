@@ -92,6 +92,12 @@ const CORE_FILES = [
   'core.js', 'setup.js', 'package.json', 'README.md',
   'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js',
   'lib/frontier.js', 'lib/frontier-codegen.js', 'lib/frontier-mobile.js',
+  'scripts/frontier-codegen.js', 'scripts/build-frontier-mobile.js',
+  'scripts/build-frontier-server.js', 'scripts/build-frontier-standalone.js',
+  'scripts/frontier-cross-compile.js', 'scripts/frontier-single-binary.js',
+  'scripts/frontier-http-server.js', 'scripts/frontier-ui-bindings.js',
+  'scripts/frontier-ai-bindings.js', 'scripts/frontier-model-embed.js',
+  'scripts/lib/frontier-utils.js',
   'scripts/sync-frontier-syntax.sh', 'mobile/build-native.sh'
 ];
 

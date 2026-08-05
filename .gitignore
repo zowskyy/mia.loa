@@ -3,6 +3,8 @@ models/
 projects/
 releases/
 deploy/
+generated/
+build/
 mobile/capacitor/node_modules/
 mobile/capacitor/www/
 mobile/capacitor/android/
