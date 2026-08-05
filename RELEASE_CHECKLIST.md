@@ -14,6 +14,26 @@ Use this before and after every release build.
 
 ## Build
 
+### Automated CI/CD (recommended)
+
+Push a version tag — GitHub Actions builds all 13 formats and publishes the release:
+
+```bash
+# Bump version in package.json, commit, then:
+git tag v1.0.2
+git push origin v1.0.2
+```
+
+Workflow: `.github/workflows/release-all.yml`
+
+- Desktop (6), Android APK, iOS Xcode project, Docker image, portable, RPi installer, community kit
+- Model downloaded once and cached for model-inclusive desktop builds
+- `SHA256SUMS`, `manifest.json`, and `RELEASE_NOTES.md` assembled automatically
+
+Optional: add `ANDROID_KEYSTORE` secret later for Play Store signing.
+
+### Manual build
+
 ```bash
 node release.js --dry-run       # Preview all 13 formats
 node release.js all             # Build everything

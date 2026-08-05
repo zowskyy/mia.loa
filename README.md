@@ -74,9 +74,17 @@ Output goes to `deploy/` — Community Kits, offline docs, i18n, Navigator train
 
 ## Release builds
 
+**CI/CD (ships all 13 formats):** push a version tag and GitHub Actions builds everything:
+
+```bash
+git tag v1.0.2 && git push origin v1.0.2
+```
+
+**Manual:**
+
 ```bash
 node release.js --dry-run
-node release.js --all
+node release.js all
 ```
 
 See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).

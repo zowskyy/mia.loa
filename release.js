@@ -9,6 +9,7 @@
     node release.js linux-arm64        Single platform
     node release.js portable
     node release.js docker
+    node release.js assemble         # CI: checksums + manifest from releases/
     node release.js --dry-run          Preview what would be built
 
   Outputs to: ./releases/
@@ -271,7 +272,17 @@ async function generateChecksum(filePath) {
 function createArchive(buildDir, outputFile, ext) {
   const releaseName = basename(buildDir);
   if (ext === 'zip') {
-    execSync(`cd "${dirname(buildDir)}" && zip -r "${outputFile}" "${releaseName}" -q`, { stdio: 'pipe' });
+    if (process.platform === 'win32') {
+      const parent = dirname(buildDir).replace(/'/g, "''");
+      const folder = releaseName.replace(/'/g, "''");
+      const dest = outputFile.replace(/'/g, "''");
+      execSync(
+        `powershell -NoProfile -Command "Compress-Archive -Path '${parent}/${folder}' -DestinationPath '${dest}' -Force"`,
+        { stdio: 'pipe' }
+      );
+    } else {
+      execSync(`cd "${dirname(buildDir)}" && zip -r "${outputFile}" "${releaseName}" -q`, { stdio: 'pipe' });
+    }
   } else if (ext === 'tar.gz' || ext === 'tar') {
     execSync(`cd "${dirname(buildDir)}" && tar -czf "${outputFile}" "${releaseName}"`, { stdio: 'pipe' });
   }
@@ -328,6 +339,144 @@ ${platform.notes}
 
 let androidApkBuilt = null;
 
+function isCI() {
+  return process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+}
+
+function ensureCapacitorDeps(capacitorDir) {
+  if (!existsSync(join(capacitorDir, 'package.json'))) {
+    warn('Capacitor project not found at mobile/capacitor/');
+    return false;
+  }
+  if (!existsSync(join(capacitorDir, 'node_modules'))) {
+    console.log('     Installing Capacitor dependencies...');
+    execSync('npm install', { cwd: capacitorDir, stdio: 'pipe' });
+  }
+  return true;
+}
+
+function signAndroidApk(unsignedApk, signedApk) {
+  const sdkRoot = process.env.ANDROID_SDK_ROOT || process.env.ANDROID_HOME;
+  if (!sdkRoot) return false;
+
+  const buildToolsDir = join(sdkRoot, 'build-tools');
+  if (!existsSync(buildToolsDir)) return false;
+
+  const buildTools = readdirSync(buildToolsDir)
+    .filter(name => /^\d/.test(name))
+    .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
+  if (!buildTools) return false;
+
+  const apksigner = join(buildToolsDir, buildTools, process.platform === 'win32' ? 'apksigner.bat' : 'apksigner');
+  if (!existsSync(apksigner)) return false;
+
+  const keystore = join(process.env.HOME || process.env.USERPROFILE || '', '.android', 'debug.keystore');
+  if (!existsSync(keystore)) {
+    execSync(
+      `keytool -genkey -v -keystore "${keystore}" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"`,
+      { stdio: 'pipe' }
+    );
+  }
+
+  copyFileSync(unsignedApk, signedApk);
+  execSync(
+    `"${apksigner}" sign --ks "${keystore}" --ks-pass pass:android --key-pass pass:android --out "${signedApk}" "${unsignedApk}"`,
+    { stdio: 'pipe' }
+  );
+  return existsSync(signedApk);
+}
+
+async function buildAndroidAPK(platformKey) {
+  const platform = PLATFORMS[platformKey];
+  if (!platform || platform.type !== 'mobile' || !platformKey.startsWith('android')) return false;
+
+  const releaseName = `${NAME}-${VERSION}-${platformKey}`;
+  const outputFile = join(RELEASE_DIR, `${releaseName}.apk`);
+
+  console.log(`\n  📱 Building Android APK: ${platform.label}`);
+  console.log(`     Output: ${basename(outputFile)}`);
+
+  const capacitorDir = join(ROOT, 'mobile', 'capacitor');
+  if (!ensureCapacitorDeps(capacitorDir)) return false;
+
+  if (!existsSync(join(capacitorDir, 'android'))) {
+    console.log('     Adding Android platform...');
+    execSync('npx cap add android', { cwd: capacitorDir, stdio: 'pipe' });
+  }
+
+  console.log('     Building web assets...');
+  execSync('node build-mobile.js', { cwd: capacitorDir, stdio: 'pipe' });
+
+  console.log('     Syncing to Android...');
+  execSync('npx cap sync android', { cwd: capacitorDir, stdio: 'pipe' });
+
+  const androidDir = join(capacitorDir, 'android');
+  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+  if (!existsSync(join(androidDir, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew'))) {
+    warn('gradlew not found — run: npx cap add android');
+    return false;
+  }
+
+  if (process.platform !== 'win32') {
+    execSync('chmod +x gradlew', { cwd: androidDir, stdio: 'pipe' });
+  }
+
+  const gradleTarget = isCI() ? 'assembleRelease' : 'assembleDebug';
+  console.log(`     Building APK via ${gradleTarget} (may take several minutes)...`);
+
+  try {
+    execSync(`${gradlew} ${gradleTarget}`, { cwd: androidDir, stdio: 'pipe', timeout: 600000 });
+
+    const apkCandidates = [
+      join(androidDir, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'),
+      join(androidDir, 'app', 'build', 'outputs', 'apk', 'release', 'app-release-unsigned.apk'),
+      join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk')
+    ];
+
+    let builtAPK = apkCandidates.find(path => existsSync(path));
+    if (!builtAPK) {
+      warn('APK not found after Gradle build');
+      return false;
+    }
+
+    if (builtAPK.includes('unsigned')) {
+      const signedPath = join(RELEASE_DIR, 'build', 'signed.apk');
+      mkdirSync(dirname(signedPath), { recursive: true });
+      if (signAndroidApk(builtAPK, signedPath)) {
+        builtAPK = signedPath;
+        ok('Signed release APK with debug keystore');
+      } else if (isCI()) {
+        warn('Could not sign APK — trying debug build');
+        execSync(`${gradlew} assembleDebug`, { cwd: androidDir, stdio: 'pipe', timeout: 600000 });
+        builtAPK = join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+      }
+    }
+
+    if (!builtAPK || !existsSync(builtAPK)) {
+      warn('No installable APK produced');
+      return false;
+    }
+
+    copyFileSync(builtAPK, outputFile);
+    androidApkBuilt = outputFile;
+    const result = await finalizeBuild(platformKey, outputFile, null);
+
+    if (platformKey === 'android-arm64') {
+      const armv7File = join(RELEASE_DIR, `${NAME}-${VERSION}-android-armv7.apk`);
+      copyFileSync(outputFile, armv7File);
+      const armv7Checksum = await generateChecksum(armv7File);
+      writeFileSync(armv7File + '.sha256', armv7Checksum);
+      ok('android-armv7 alias APK created');
+    }
+
+    return result;
+  } catch (e) {
+    warn(`Android build failed: ${e.message}`);
+    warn('Install Android Studio or set ANDROID_SDK_ROOT with platform 34 + build-tools 34.0.0');
+    return false;
+  }
+}
+
 async function buildMobile(platformKey) {
   const platform = PLATFORMS[platformKey];
   if (!platform || platform.type !== 'mobile') return false;
@@ -355,54 +504,32 @@ async function buildMobile(platformKey) {
   console.log(`     Output: ${basename(outputFile)}`);
 
   const capacitorDir = join(ROOT, 'mobile', 'capacitor');
-  if (!existsSync(capacitorDir)) {
-    warn('Capacitor project not found — run: cd mobile/capacitor && npm install && node build-mobile.js');
-    return false;
-  }
+  if (!ensureCapacitorDeps(capacitorDir)) return false;
 
   if (platformKey === 'ios') {
-    const iosDir = join(capacitorDir, 'ios');
-    if (!existsSync(iosDir)) {
-      warn('iOS project not built — run: npx cap add ios');
-      return false;
+    if (!existsSync(join(capacitorDir, 'ios'))) {
+      console.log('     Adding iOS platform...');
+      execSync('npx cap add ios', { cwd: capacitorDir, stdio: 'pipe' });
     }
+    console.log('     Building web assets...');
+    execSync('node build-mobile.js', { cwd: capacitorDir, stdio: 'pipe' });
+    execSync('npx cap sync ios', { cwd: capacitorDir, stdio: 'pipe' });
+
+    const iosDir = join(capacitorDir, 'ios');
     const buildDir = join(RELEASE_DIR, 'build', releaseName);
     if (existsSync(buildDir)) rmSync(buildDir, { recursive: true });
     copyTree(iosDir, buildDir);
     writeFileSync(join(buildDir, 'BUILD_INSTRUCTIONS.md'),
-      `# Building Lighthouse for iOS\n\n1. Open in Xcode\n2. Configure signing\n3. Product > Archive\n`);
+      `# Building Lighthouse for iOS\n\n1. Open App/App.xcworkspace in Xcode\n2. Configure signing team\n3. Product > Archive\n4. Distribute to TestFlight or App Store\n`);
     createArchive(buildDir, outputFile, 'tar.gz');
     return finalizeBuild(platformKey, outputFile, buildDir);
   }
 
-  const androidDir = join(capacitorDir, 'android');
-  const gradlew = join(androidDir, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
-  if (!existsSync(gradlew)) {
-    warn('gradlew not found — run: cd mobile/capacitor && npx cap add android');
-    return false;
+  if (platformKey.startsWith('android')) {
+    return buildAndroidAPK(platformKey);
   }
 
-  if (androidApkBuilt && existsSync(androidApkBuilt)) {
-    copyFileSync(androidApkBuilt, outputFile);
-    return finalizeBuild(platformKey, outputFile, null);
-  }
-
-  try {
-    execSync(`cd "${androidDir}" && ${process.platform === 'win32' ? 'gradlew.bat' : './gradlew'} assembleDebug`,
-      { stdio: 'pipe', timeout: 300000 });
-    const apkPath = join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
-    if (!existsSync(apkPath)) {
-      warn('APK not found after Gradle build');
-      return false;
-    }
-    copyFileSync(apkPath, outputFile);
-    androidApkBuilt = outputFile;
-    return finalizeBuild(platformKey, outputFile, null);
-  } catch (e) {
-    warn(`Android build failed: ${e.message}`);
-    warn('Install Android SDK or build APK manually');
-    return false;
-  }
+  return false;
 }
 
 async function buildPortable(platformKey = 'portable') {
@@ -538,6 +665,55 @@ async function buildCommunityKit() {
   return finalizeBuild(platformKey, outputFile, null);
 }
 
+function platformKeyFromFilename(filename) {
+  const prefix = `${NAME}-${VERSION}-`;
+  if (!filename.startsWith(prefix)) return null;
+  const rest = filename.slice(prefix.length);
+  for (const [key, p] of Object.entries(PLATFORMS)) {
+    if (rest === `${key}.${p.ext}`) return key;
+  }
+  return null;
+}
+
+async function assembleReleaseArtifacts() {
+  step('Assembling Release Artifacts');
+  if (!existsSync(RELEASE_DIR)) mkdirSync(RELEASE_DIR, { recursive: true });
+
+  const artifactPattern = new RegExp(`^${NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-${VERSION}-.+\\.(tar\\.gz|zip|apk|tar)$`);
+  const results = [];
+
+  for (const entry of readdirSync(RELEASE_DIR)) {
+    if (!artifactPattern.test(entry)) continue;
+    const outputFile = join(RELEASE_DIR, entry);
+    if (!statSync(outputFile).isFile()) continue;
+
+    const platformKey = platformKeyFromFilename(entry);
+    const checksum = await generateChecksum(outputFile);
+    writeFileSync(outputFile + '.sha256', checksum);
+    const sizeMB = (statSync(outputFile).size / 1024 / 1024).toFixed(1);
+    results.push({ platformKey: platformKey || entry, outputFile, sizeMB, checksum });
+    ok(`${entry} (${sizeMB} MB)`);
+  }
+
+  if (!results.length) {
+    warn('No release artifacts found in releases/');
+    return [];
+  }
+
+  const known = results.filter(r => PLATFORMS[r.platformKey]);
+  writeSHA256SUMS(known.length ? known : results);
+  generateManifest(known.length ? known : results);
+  createLatestSymlinks(known);
+
+  const notes = generateReleaseNotes();
+  writeFileSync(join(RELEASE_DIR, 'RELEASE_NOTES.md'), notes);
+  writeFileSync(join(ROOT, 'RELEASE_NOTES.md'), notes);
+  ok('RELEASE_NOTES.md generated');
+
+  console.log(`\n  Assembled ${results.length} release artifact(s)`);
+  return results;
+}
+
 function writeSHA256SUMS(results) {
   const valid = results.filter(r => r && r.checksum);
   if (!valid.length) return;
@@ -595,6 +771,12 @@ async function main() {
 
   if (filter === '--dry-run' || filter === '--platform' || filter === '--platforms') {
     printDryRun();
+    return;
+  }
+
+  if (filter === 'assemble') {
+    console.log(`\n⚡ Lighthouse Release Assembler v${VERSION}\n`);
+    await assembleReleaseArtifacts();
     return;
   }
 
