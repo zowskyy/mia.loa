@@ -1,0 +1,57 @@
+// cursor/src/ui/visual.frontier
+// Visual Fidelity & Quality Upgrades
+// Project Nexus · Slide 15 · ARC A+ Hard Gate
+
+component VisualEnhancements {
+    // Sub-pixel rendering — smooth fonts
+    static fontRendering: {
+        antialiasing: true,
+        subpixel: true,
+        hinting: "light",
+    },
+
+    // GPU-accelerated UI
+    static renderUI(components: Vec<Component>) {
+        // All UI rendered as GPU textures
+        // No CPU rasterization
+        let scene = Scene.new();
+
+        for component in components {
+            let ui = component.render();
+            scene.add(ui);
+        }
+
+        Renderer.render(scene);
+    },
+
+    // Animations — 60 FPS guaranteed
+    static animate(property: String, from: f32, to: f32, duration: f32) {
+        // Frontier → Job System → GPU
+        let startTime = time;
+        while (time - startTime) < duration {
+            let t = (time - startTime) / duration;
+            let value = lerp(from, to, smoothstep(t));
+            this.property = value;
+            this.render();
+            yield; // Non-blocking
+        }
+    },
+
+    // Dark mode + theme system
+    static themes: {
+        dark: {
+            background: (13, 17, 23),
+            text: (201, 209, 217),
+            accent: (88, 166, 255),
+            error: (248, 81, 73),
+            success: (126, 231, 135),
+        },
+        light: {
+            background: (255, 255, 255),
+            text: (36, 41, 46),
+            accent: (0, 112, 243),
+            error: (215, 0, 0),
+            success: (0, 128, 0),
+        },
+    },
+}

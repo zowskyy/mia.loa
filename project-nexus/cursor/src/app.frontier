@@ -1,0 +1,90 @@
+// cursor/src/app.frontier
+// Cursor IDE Application Shell — ties all panels together
+// Project Nexus · Slide 15 · ARC A+ Hard Gate
+
+component CursorIDE {
+    state: {
+        editor: Editor,
+        explorer: FileExplorer,
+        terminal: Terminal,
+        chat: AIChat,
+        lsp: FrontierLSP,
+        build: BuildSystem,
+        performance: PerformanceEngine,
+        visual: VisualEnhancements,
+        layout: Layout,
+        theme: String,
+    },
+
+    init(workspace: Path) {
+        this.theme = "dark";
+        this.layout = Layout {
+            sidebar_width: 240,
+            panel_height: 200,
+            chat_width: 320,
+        };
+
+        this.explorer.root = workspace;
+        this.explorer.refresh();
+
+        this.terminal.working_dir = workspace;
+        this.build.project = Project.load(workspace);
+        this.build.incremental = true;
+        this.build.watch();
+
+        this.editor.load(workspace.join("README.md"));
+    },
+
+    render(ctx: RenderContext) {
+        let theme = VisualEnhancements.themes[this.theme];
+        clear(theme.background);
+
+        // Layout regions
+        let sidebar = ctx.region(0, 0, this.layout.sidebar_width, ctx.height - this.layout.panel_height);
+        let editor_region = ctx.region(
+            this.layout.sidebar_width,
+            0,
+            ctx.width - this.layout.sidebar_width - this.layout.chat_width,
+            ctx.height - this.layout.panel_height
+        );
+        let chat_region = ctx.region(
+            ctx.width - this.layout.chat_width,
+            0,
+            this.layout.chat_width,
+            ctx.height - this.layout.panel_height
+        );
+        let terminal_region = ctx.region(
+            this.layout.sidebar_width,
+            ctx.height - this.layout.panel_height,
+            ctx.width - this.layout.sidebar_width,
+            this.layout.panel_height
+        );
+
+        this.explorer.render(sidebar);
+        this.editor.render(editor_region);
+        this.chat.render(chat_region);
+        this.terminal.render(terminal_region);
+
+        // Status bar
+        drawText(this.editor.status, 8, ctx.height - 18, theme.text);
+    },
+
+    onKey(key: Key) {
+        match key {
+            Key::CtrlB => { this.toggleSidebar(); },
+            Key::CtrlJ => { this.toggleTerminal(); },
+            Key::CtrlL => { this.toggleChat(); },
+            Key::CtrlGrave => { this.focusTerminal(); },
+            _ => {
+                if this.focus == "editor" { this.editor.onKey(key); }
+                else if this.focus == "terminal" { this.terminal.onKey(key); }
+                else if this.focus == "chat" { this.chat.onKey(key); }
+            },
+        }
+    },
+
+    toggleSidebar() { this.layout.sidebar_width = this.layout.sidebar_width > 0 ? 0 : 240; },
+    toggleTerminal() { this.layout.panel_height = this.layout.panel_height > 0 ? 0 : 200; },
+    toggleChat() { this.layout.chat_width = this.layout.chat_width > 0 ? 0 : 320; },
+    focusTerminal() { this.focus = "terminal"; },
+}

@@ -1,0 +1,74 @@
+// cursor/src/explorer/explorer.frontier
+// File Explorer & Project Management
+// Project Nexus · Slide 15 · ARC A+ Hard Gate
+
+component FileExplorer {
+    state: {
+        root: Path,
+        expanded: Set<Path>,
+        selected: Option<Path>,
+        files: Vec<FileEntry>,
+    },
+
+    render(ctx: RenderContext) {
+        let y = 0;
+        for entry in this.files {
+            let indent = entry.depth * 20;
+            let icon = entry.isDirectory ? "📁" : "📄";
+            let color = entry.isDirectory ? (100, 149, 237) : (200, 200, 200);
+
+            drawText(icon + " " + entry.name, indent, y, color);
+            y += ctx.line_height;
+
+            if entry.isDirectory && entry.expanded {
+                for child in entry.children {
+                    drawText("  " + child.name, indent + 20, y, (180, 180, 180));
+                    y += ctx.line_height;
+                }
+            }
+        }
+    },
+
+    onMouseClick(x: f32, y: f32) {
+        let clicked = this.getEntryAt(y);
+        if clicked.isDirectory {
+            clicked.expanded = !clicked.expanded;
+            if clicked.expanded {
+                this.expanded.insert(clicked.path);
+            } else {
+                this.expanded.remove(clicked.path);
+            }
+            this.refresh();
+        } else {
+            this.selected = Some(clicked.path);
+            Editor.load(clicked.path); // Load into editor
+        }
+    },
+
+    getEntryAt(y: f32) -> FileEntry {
+        let index = (y / 18.0) as usize;
+        return this.files[min(index, this.files.len() - 1)];
+    },
+
+    // Virtual filesystem — no disk I/O blocking
+    refresh() {
+        this.files = this.scan(this.root);
+        this.files.sort(|a, b| a.isDirectory && !b.isDirectory ? -1 : 1);
+    },
+
+    scan(root: Path) -> Vec<FileEntry> {
+        let entries = VFS.list(root);
+        let result: Vec<FileEntry> = [];
+        for e in entries {
+            result.push(FileEntry {
+                name: e.name,
+                path: e.path,
+                isDirectory: e.is_dir,
+                depth: e.depth,
+                expanded: this.expanded.contains(e.path),
+                children: e.is_dir && this.expanded.contains(e.path) ? VFS.list(e.path) : [],
+            });
+        }
+        return result;
+    }
+}

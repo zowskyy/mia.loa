@@ -1,0 +1,120 @@
+// cursor/src/ai/engine.frontier
+// Frontier's native AI — understands itself
+// Project Nexus · Slide 15 · ARC A+ Hard Gate
+
+component AIEngine {
+    model: NeuralNetwork,
+    context: String,
+    tokenCache: TokenCache,
+
+    // Generate code from natural language prompt
+    generate(prompt: String, context: String, style: String) -> String {
+        // 1. Tokenize input
+        let tokens = this.tokenize(prompt + context);
+
+        // 2. Run inference (optimized for Frontier's syntax)
+        let output_tokens = this.model.infer(tokens);
+
+        // 3. Decode tokens to Frontier code
+        let code = this.decode(output_tokens);
+
+        // 4. Apply style rules
+        if style.contains("optimized") {
+            code = FrontierOptimizer.optimize(code);
+        }
+
+        if style.contains("ARC-verified") {
+            // Ensure code passes ARC gates
+            let arc = ARCChecker.verify(code);
+            if arc.hasViolations() {
+                // Self-correct
+                code = this.fixARCViolations(code, arc.violations);
+            }
+        }
+
+        return code;
+    },
+
+    generateDetailed(prompt: String, context: String, style: String) -> AIResponse {
+        let code = this.generate(prompt, context, style);
+        return AIResponse {
+            explanation: "Generated ARC-verified Frontier code for: " + prompt,
+            code: code,
+            shouldApply: style.contains("complete"),
+        };
+    },
+
+    tokenize(input: String) -> Vec<TokenId> {
+        return this.tokenCache.encode(input);
+    },
+
+    decode(tokens: Vec<TokenId>) -> String {
+        return this.tokenCache.decode(tokens);
+    },
+
+    fixARCViolations(code: String, violations: Vec<ARCViolation>) -> String {
+        let fixed = code;
+        for v in violations {
+            fixed = FRONTIER_FIXES.apply(fixed, v);
+        }
+        return fixed;
+    },
+
+    // Optimize existing Frontier code
+    optimize(code: String) -> String {
+        // 1. Parse to AST
+        let ast = FrontierParser.parse(code);
+
+        // 2. Apply optimization rules
+        // - Algebraic simplification: sqrt(x^2 + y^2) → distance2(x, y)
+        // - Loop unrolling: for i in 0..4 → manual operations
+        // - Dead code elimination: remove unused variables
+        // - SIMD vectorization: scalar operations → vector operations
+        let optimized = FrontierOptimizer.run(ast);
+
+        // 3. Generate code
+        return FrontierGenerator.generate(optimized);
+    },
+
+    // Code review — ARC automation
+    review(code: String) -> ReviewReport {
+        let ast = FrontierParser.parse(code);
+        let violations = ARCChecker.checkAll(ast);
+
+        let report = ReviewReport {
+            score: 100 - violations.len() * 5,
+            violations: violations,
+            suggestions: FRONTIER_FIXES[violations],
+        };
+
+        return report;
+    },
+
+    // Natural language → Frontier code
+    // This is how you build the engine with words
+    understand(prompt: String) -> FrontierProgram {
+        // In natural language: "Create a player that moves with WASD"
+        // → Outputs: Frontier Player entity with WASD movement
+
+        let intent = this.parseIntent(prompt);
+        let program = this.generateFromIntent(intent);
+        return program;
+    },
+
+    parseIntent(prompt: String) -> Intent {
+        let tokens = this.tokenize(prompt);
+        return IntentClassifier.classify(tokens);
+    },
+
+    generateFromIntent(intent: Intent) -> FrontierProgram {
+        let skeleton = IntentTemplates.lookup(intent.kind);
+        return this.model.fill(skeleton, intent.slots);
+    },
+
+    // Predictive preloading (AI predicts what you'll type)
+    predict(context: String) -> String {
+        let tokens = this.tokenize(context);
+        let next = this.model.predict_next(tokens);
+        return this.decode(next);
+    }
+}

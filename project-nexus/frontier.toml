@@ -1,0 +1,26 @@
+# Project Nexus — Frontier package manifest
+name = "project-nexus"
+version = "0.1.0"
+description = "Cursor IDE written entirely in Frontier Syntax"
+license = "MIT"
+entry = "cursor/src/app.frontier"
+
+[components]
+editor = "cursor/src/editor/core.frontier"
+ai_engine = "cursor/src/ai/engine.frontier"
+ai_chat = "cursor/src/ai/chat.frontier"
+explorer = "cursor/src/explorer/explorer.frontier"
+terminal = "cursor/src/terminal/terminal.frontier"
+lsp = "cursor/src/lsp/services.frontier"
+build = "cursor/src/build/system.frontier"
+performance = "cursor/src/optimization/performance.frontier"
+visual = "cursor/src/ui/visual.frontier"
+app = "cursor/src/app.frontier"
+
+[gates]
+slide = 15
+manifest = "gates/slide_15_gates.json"
+orchestrator = "build/arc_orchestrator.py"
+
+[dependencies]
+frontier-syntax = { git = "https://github.com/zowskyy/frontier-syntax", optional = true }
