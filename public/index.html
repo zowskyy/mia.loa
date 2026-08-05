@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=yes">
+<meta name="theme-color" content="#0a0a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Lighthouse — Free Coding Agent</title>
+<style>
+:root{--bg:#0a0a1a;--s1:#12122a;--s2:#1a1a3a;--b:#2a2a4a;--t:#e0e0f0;--t2:#8888aa;--a:#ff4d6a;--g:#4ecca3;--y:#f0a500}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t);height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--s1);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--b);flex-shrink:0}
+.logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--a),#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2)}
+#dot{width:8px;height:8px;border-radius:50%;background:var(--b)}
+#dot.online{background:var(--g)}#dot.loading{background:var(--y);animation:pulse 1s infinite}#dot.offline{background:var(--a)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.stages{display:flex;gap:4px;padding:8px 16px;background:var(--s1);border-bottom:1px solid var(--b);flex-shrink:0;overflow-x:auto}
+.stage{padding:5px 10px;border-radius:20px;font-size:11px;white-space:nowrap;color:var(--t2);background:var(--s2);border:1px solid var(--b);transition:all .3s}
+.stage.active{background:var(--a);color:#fff;border-color:var(--a)}
+.stage.done{background:var(--g);color:var(--bg);border-color:var(--g)}
+.stage.waiting{border-color:var(--y);color:var(--y);animation:pulse 1.5s infinite}
+main{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:90%;padding:12px 16px;border-radius:12px;line-height:1.6;font-size:14px;animation:up .3s}
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-end;background:var(--a);color:#fff;border-bottom-right-radius:4px}
+.msg.agent{align-self:flex-start;background:var(--s1);border:1px solid var(--b);border-bottom-left-radius:4px}
+.msg.system{align-self:center;background:0;color:var(--t2);font-size:12px;text-align:center}
+pre{background:var(--bg);padding:12px;border-radius:8px;overflow-x:auto;font-family:monospace;font-size:12px;margin:8px 0;border:1px solid var(--b)}
+code{font-family:monospace;font-size:12px}
+.btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.btns button{padding:6px 12px;border-radius:16px;border:1px solid var(--b);background:var(--s2);color:var(--t);font-size:12px;cursor:pointer;transition:.2s}
+.btns button:hover{background:var(--a);border-color:var(--a);color:#fff}
+.panel{position:fixed;top:0;right:0;width:min(400px,100vw);height:100dvh;background:var(--s1);border-left:1px solid var(--b);z-index:100;display:none;flex-direction:column}
+.panel.open{display:flex}
+.panel-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--b)}
+.panel-header button{padding:6px 12px;border-radius:8px;border:1px solid var(--b);background:var(--s2);color:var(--t);cursor:pointer}
+#codeContent{flex:1;padding:16px;overflow:auto;font-family:monospace;font-size:12px;background:var(--bg);white-space:pre-wrap}
+footer{padding:10px 16px;background:var(--s1);border-top:1px solid var(--b);display:flex;gap:8px;flex-shrink:0}
+footer textarea{flex:1;background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:10px 14px;color:var(--t);font-size:14px;resize:none;min-height:42px;max-height:120px;outline:0;font-family:inherit}
+footer textarea:focus{border-color:var(--a)}
+footer button{padding:10px 16px;border-radius:12px;border:0;background:var(--a);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0}
+footer button:disabled{opacity:.4}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:0}::-webkit-scrollbar-thumb{background:var(--b);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡ Lighthouse</div>
+  <div class="status"><span id="dot"></span><span id="statusText">Starting...</span></div>
+</header>
+
+<div class="stages">
+  <div class="stage" data-s="analysis">🔍 Analysis</div>
+  <div class="stage" data-s="plan">📋 Plan</div>
+  <div class="stage" data-s="code">💻 Code</div>
+  <div class="stage" data-s="review">✅ Review</div>
+</div>
+
+<main id="chat">
+  <div class="msg agent">
+    <b>Welcome to Lighthouse!</b> 👋<br><br>
+    I build software from ideas. <b>Free. Offline. No subscription.</b><br><br>
+    <b>Try:</b><br>
+    • "Build a tool to track water pump maintenance"<br>
+    • "Create an app for farmers to compare crop prices"<br>
+    • "Write a function to calculate solar panel output"<br><br>
+    <em>I review my own code to make it better.</em>
+    <div class="btns">
+      <button onclick="idea()" style="border:1px dashed var(--a);background:0;color:var(--a)">💡 I have an idea</button>
+    </div>
+  </div>
+</main>
+
+<div class="panel" id="codePanel">
+  <div class="panel-header">
+    <b id="codeTitle">💻 Code</b>
+    <div>
+      <button onclick="downloadCode()">⬇️ Download</button>
+      <button onclick="document.getElementById('codePanel').classList.remove('open')">✕</button>
+    </div>
+  </div>
+  <div id="codeContent"></div>
+</div>
+
+<footer>
+  <textarea id="inp" placeholder="Describe what you want to build... (Enter to send)" rows="1"></textarea>
+  <button id="sendBtn" onclick="send()">▶</button>
+</footer>
+
+<script src="client.js"></script>
+</body>
+</html>

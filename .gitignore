@@ -1,0 +1,6 @@
+node_modules/
+models/
+projects/
+*.gguf
+.DS_Store
+NUL
