@@ -95,6 +95,18 @@ See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
 - 4GB free disk space (server model)
 - 2GB+ RAM (4GB recommended; 8GB+ for on-device WebLLM)
 
+## Cursor Gate
+
+This repo includes the [Cursor Gate](https://github.com/zowskyy/Schema) stack for agent-driven code review. Gate reviewer deps live in `requirements-gate.txt` (Node runtime deps remain in `package.json`).
+
+```bash
+pip install -r requirements-gate.txt
+bash scripts/install-agent-environment.sh
+bash scripts/gate-file.sh --file samples/hello_passing.py
+```
+
+PR CI: workflow `Gate Check` runs the gate on `samples/hello_passing.py`. Gap audit: [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## License
 
 MIT — Free forever.

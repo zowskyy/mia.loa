@@ -10,3 +10,9 @@ mobile/capacitor/ios/
 *.gguf
 .DS_Store
 NUL
+__pycache__/
+*.pyc
+.env
+.cursor/gate-logs/
+.cursor/gate-cache/
+.venv/
