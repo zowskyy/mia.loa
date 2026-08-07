@@ -107,6 +107,19 @@ bash scripts/gate-file.sh --file samples/hello_passing.py
 
 PR CI: workflow `Gate Check` runs the gate on `samples/hello_passing.py`. Gap audit: [docs/ROADMAP.md](docs/ROADMAP.md).
 
+**Gate scope note:** `core.js` and `deploy.js` are not individually gated yet — they are large runtime modules. CI gates `samples/hello_passing.py` as the agent-policy smoke test. Critical JS changes should be reviewed manually or via future sample wrappers (see ROADMAP milestone 2).
+
+## Frontier / Project Nexus
+
+Frontier integration (PR #3) was reverted on `main`; the path forward is the mirrored **[project-nexus/](project-nexus/)** tree, which tracks [zowskyy/project-nexus](https://github.com/zowskyy/project-nexus) until the Cursor GitHub App has push access.
+
+```bash
+cd project-nexus
+python3 build/arc_orchestrator.py --slides 15
+```
+
+See [project-nexus/MIRROR.md](project-nexus/MIRROR.md) and [project-nexus/README.md](project-nexus/README.md) for architecture. Lighthouse runtime (`core.js`) remains Node/Express; Frontier re-integration is planned once the standalone `project-nexus` repo is gate-ready.
+
 ## License
 
 MIT — Free forever.
