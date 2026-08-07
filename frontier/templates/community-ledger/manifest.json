@@ -1,0 +1,23 @@
+{
+  "name": "community-ledger",
+  "version": "1.0.0",
+  "description": "Micro-loan and savings group management",
+  "icon": "💰",
+  "category": "finance",
+  "author": "Lighthouse Community",
+  "license": "MIT",
+  "fields": [
+    "Member",
+    "Loan",
+    "Payment",
+    "Savings"
+  ],
+  "features": [
+    "Loan tracking",
+    "Payment schedule",
+    "Group savings",
+    "Transparency reports"
+  ],
+  "generatedBy": "Lighthouse ARC Engine",
+  "generatedDate": "2026-08-05T06:19:14.755Z"
+}

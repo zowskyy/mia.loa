@@ -1,0 +1,23 @@
+{
+  "name": "field-survey",
+  "version": "1.0.0",
+  "description": "Offline data collection for community surveys",
+  "icon": "📋",
+  "category": "research",
+  "author": "Lighthouse Community",
+  "license": "MIT",
+  "fields": [
+    "Survey",
+    "Question",
+    "Response",
+    "Location"
+  ],
+  "features": [
+    "Custom forms",
+    "GPS tagging",
+    "Photo attachments",
+    "CSV export"
+  ],
+  "generatedBy": "Lighthouse ARC Engine",
+  "generatedDate": "2026-08-05T06:19:14.755Z"
+}

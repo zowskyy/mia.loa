@@ -1,0 +1,22 @@
+{
+  "name": "water-tracker",
+  "version": "1.0.0",
+  "description": "Water pump maintenance and repair tracking",
+  "icon": "🚰",
+  "category": "infrastructure",
+  "author": "Lighthouse Community",
+  "license": "MIT",
+  "fields": [
+    "Pump",
+    "Location",
+    "ServiceRecord"
+  ],
+  "features": [
+    "GPS tracking",
+    "Photo capture",
+    "Service scheduling",
+    "Offline storage"
+  ],
+  "generatedBy": "Lighthouse ARC Engine",
+  "generatedDate": "2026-08-05T06:19:14.753Z"
+}

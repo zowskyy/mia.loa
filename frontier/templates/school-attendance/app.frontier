@@ -1,0 +1,81 @@
+// School Attendance — Lighthouse Community Template
+// Student attendance and grade tracking for village schools
+// Generated: 2026-08-05T06:19:14.754Z
+// License: MIT — Free forever
+
+module school_attendance;
+
+import frontier.ui.{Screen, Button, List, TextInput, Card, Navigation};
+import frontier.storage.{Database, Query, Sync};
+import frontier.hardware.{GPS, Camera, Barcode};
+
+type Student = { id: Int, name: String, grade: Int, parent_name: String, parent_phone: String }
+type Class = { id: Int, name: String, teacher: String, room: String, schedule: String }
+type Attendance = { id: Int, student_id: Int, class_id: Int, date: String, status: String }
+type Grade = { id: Int, student_id: Int, subject: String, score: Float, term: String }
+
+fn init_database() -> Result<Database, String> {
+  let db = Database::open("school_attendance.db")?;
+  db.create_table("students", [
+    ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
+    ("data", "TEXT"),
+    ("created_at", "TEXT DEFAULT (datetime('now'))"),
+    ("updated_at", "TEXT DEFAULT (datetime('now'))"),
+  ])?;
+  Ok(db)
+}
+
+fn create(data: String) -> Result<Int, String> {
+  let db = init_database()?;
+  Ok(db.insert("students", data)?)
+}
+
+fn list_all() -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM students ORDER BY created_at DESC")?)
+}
+
+fn search(query: String) -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM students WHERE data LIKE ?", ["%" + query + "%"])?)
+}
+
+fn qr_check_in(code: String) -> Result<(), String> {
+  let db = init_database()?;
+  db.execute("INSERT INTO attendance (data, created_at) VALUES (?, datetime('now'))", [code])?;
+  Ok(())
+}
+
+fn attendance_reports() -> Result<(), String> {
+  // Attendance reports
+  Ok(())
+}
+
+fn grade_tracking() -> Result<(), String> {
+  // Grade tracking
+  Ok(())
+}
+
+fn parent_notifications() -> Result<(), String> {
+  // Parent notifications
+  Ok(())
+}
+
+fn main() -> void {
+  let screen = Screen::new("School Attendance");
+  screen.set_icon("📚");
+  let _ = init_database();
+
+  let search_bar = TextInput::new("search");
+  search_bar.set_placeholder("Search...");
+  screen.add_widget(search_bar);
+
+  screen.add_button("add_new", "➕ Add New", "show_add_form");
+
+  let list = List::new("records");
+  for record in list_all().unwrap_or([]) {
+    list.add_card(Card::new(record));
+  }
+  screen.add_list(list);
+  screen.render();
+}

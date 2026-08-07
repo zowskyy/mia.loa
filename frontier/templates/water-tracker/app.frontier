@@ -1,0 +1,80 @@
+// Water Tracker — Lighthouse Community Template
+// Water pump maintenance and repair tracking
+// Generated: 2026-08-05T06:19:14.752Z
+// License: MIT — Free forever
+
+module water_tracker;
+
+import frontier.ui.{Screen, Button, List, TextInput, Card, Navigation};
+import frontier.storage.{Database, Query, Sync};
+import frontier.hardware.{GPS, Camera, Barcode};
+
+type Pump = { id: Int, location: String, gps: (Float, Float), status: String, last_service: String, next_service: String }
+type Location = { lat: Float, lng: Float, name: String, address: String }
+type ServiceRecord = { id: Int, pump_id: Int, date: String, technician: String, notes: String, cost: Float }
+
+fn init_database() -> Result<Database, String> {
+  let db = Database::open("water_tracker.db")?;
+  db.create_table("pumps", [
+    ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
+    ("data", "TEXT"),
+    ("created_at", "TEXT DEFAULT (datetime('now'))"),
+    ("updated_at", "TEXT DEFAULT (datetime('now'))"),
+  ])?;
+  Ok(db)
+}
+
+fn create(data: String) -> Result<Int, String> {
+  let db = init_database()?;
+  Ok(db.insert("pumps", data)?)
+}
+
+fn list_all() -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM pumps ORDER BY created_at DESC")?)
+}
+
+fn search(query: String) -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM pumps WHERE data LIKE ?", ["%" + query + "%"])?)
+}
+
+fn get_location() -> Result<(Float, Float), String> {
+  let gps = GPS::current()?;
+  Ok((gps.latitude, gps.longitude))
+}
+
+fn capture_photo() -> Result<Binary, String> {
+  let photo = Camera::capture()?;
+  Camera::compress(photo, "medium")
+}
+
+fn schedule_service(id: Int, date: String) -> Result<(), String> {
+  let db = init_database()?;
+  db.execute("UPDATE pumps SET updated_at = ? WHERE id = ?", [date, id])?;
+  Ok(())
+}
+
+fn sync_when_online() -> Result<(), String> {
+  let sync = Sync::new();
+  sync.on_connect(|| Ok(()))
+}
+
+fn main() -> void {
+  let screen = Screen::new("Water Tracker");
+  screen.set_icon("🚰");
+  let _ = init_database();
+
+  let search_bar = TextInput::new("search");
+  search_bar.set_placeholder("Search...");
+  screen.add_widget(search_bar);
+
+  screen.add_button("add_new", "➕ Add New", "show_add_form");
+
+  let list = List::new("records");
+  for record in list_all().unwrap_or([]) {
+    list.add_card(Card::new(record));
+  }
+  screen.add_list(list);
+  screen.render();
+}

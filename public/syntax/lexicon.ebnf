@@ -1,0 +1,163 @@
+(* =============================================================================
+   FRONTIER SYNTAX — LEXICON SPECIFICATION (Audit Cycle 1)
+   Version: 1.0.0
+   Engine: re2c v3.1
+   Encoding: UTF-8 with NFC normalization applied before lexing
+   Time Complexity: O(n) where n = byte length of normalized input
+   ============================================================================= *)
+
+(* -----------------------------------------------------------------------------
+   §1  CHARACTER SET
+   ----------------------------------------------------------------------------- *)
+
+ascii_letter    = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I"
+                | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R"
+                | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+                | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i"
+                | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r"
+                | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "_" ;
+
+ascii_digit     = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+
+(* Unicode homoglyphs are illegal. Only ASCII letters are permitted in identifiers. *)
+
+(* -----------------------------------------------------------------------------
+   §2  WHITESPACE & COMMENTS
+   ----------------------------------------------------------------------------- *)
+
+whitespace      = " " | "\t" | "\r" | "\n" ;
+
+line_comment    = "//", { ? any character except "\n" ? }, "\n" ;
+
+block_comment   = "/*", { ? any character ? }, "*/" ;
+
+(* Whitespace and comments produce no tokens. They are discarded by the lexer. *)
+
+(* -----------------------------------------------------------------------------
+   §3  KEYWORDS (reserved — cannot be used as identifiers)
+   ----------------------------------------------------------------------------- *)
+
+keyword         = "let" | "fn" | "return" | "if" | "else"
+                | "true" | "false" | "null"
+                | "int" | "float" | "bool" | "string" | "void" ;
+
+(* Constraint: keyword "iff" is banned. It is not in the keyword set.
+   Constraint: keyword "if" and identifier prefix "iff" are prefix-disjoint
+   because keywords match only when NOT followed by [A-Za-z0-9_]. *)
+
+(* -----------------------------------------------------------------------------
+   §4  IDENTIFIERS
+   ----------------------------------------------------------------------------- *)
+
+identifier      = ascii_letter, { ascii_letter | ascii_digit } ;
+
+(* Constraint: An identifier MUST NOT equal any keyword literal.
+   Constraint: Identifiers are ASCII-only. Unicode homoglyphs are illegal. *)
+
+(* -----------------------------------------------------------------------------
+   §5  LITERALS
+   ----------------------------------------------------------------------------- *)
+
+integer_literal = "0"
+                | ( "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" )
+                  , { ascii_digit } ;
+
+float_literal   = integer_literal, ".", ascii_digit, { ascii_digit }
+                | integer_literal, ".", "e", [ "+" | "-" ], integer_literal
+                | integer_literal, ".", ascii_digit, { ascii_digit },
+                  "e", [ "+" | "-" ], integer_literal ;
+
+string_literal  = '"', { string_char }, '"' ;
+
+string_char     = ? any UTF-8 codepoint except '"' (U+0022), '\' (U+005C), "\n", "\r" ?
+                | escape_sequence ;
+
+escape_sequence = "\\", ( "n" | "t" | "r" | "\\" | '"' ) ;
+
+(* Constraint: Single quotes (') are illegal for strings. Double quotes (") only. *)
+
+boolean_literal = "true" | "false" ;
+
+null_literal    = "null" ;
+
+(* -----------------------------------------------------------------------------
+   §6  OPERATORS
+   ----------------------------------------------------------------------------- *)
+
+unary_op        = "-" | "!" | "~" ;
+
+multiplicative_op = "*" | "/" | "%" ;
+
+additive_op     = "+" | "-" ;
+
+relational_op   = "<" | ">" | "<=" | ">=" ;
+
+equality_op     = "==" | "!=" ;
+
+logical_and_op  = "&&" ;
+
+logical_or_op   = "||" ;
+
+exponent_op     = "^" ;
+
+assignment_op   = "=" ;
+
+optional_annot  = "?" ;
+
+required_annot  = "!" ;
+
+(* Note: "!" serves dual role as unary_op and required_annot.
+   Disambiguation occurs at parse time based on syntactic position:
+   - Prefix position before operand: unary_op
+   - Suffix position after type or expression: required_annot
+   Lexer emits single BANG token for "!". *)
+
+(* -----------------------------------------------------------------------------
+   §7  DELIMITERS
+   ----------------------------------------------------------------------------- *)
+
+delimiter       = "(" | ")" | "{" | "}" | "," | ";" | ":" | "." ;
+
+(* -----------------------------------------------------------------------------
+   §8  TOKEN SET (complete enumeration)
+   ----------------------------------------------------------------------------- *)
+
+token           = keyword
+                | identifier
+                | integer_literal
+                | float_literal
+                | string_literal
+                | unary_op
+                | multiplicative_op
+                | additive_op
+                | relational_op
+                | equality_op
+                | logical_and_op
+                | logical_or_op
+                | exponent_op
+                | assignment_op
+                | optional_annot
+                | required_annot
+                | delimiter ;
+
+(* -----------------------------------------------------------------------------
+   §9  PREFIX-DISJOINTNESS CONSTRAINTS
+   ----------------------------------------------------------------------------- *)
+
+(* Rule PD-1: Multi-character operators are matched by longest-prefix rule.
+   Rule PD-2: Keywords match only when the next character is NOT [A-Za-z0-9_].
+   Rule PD-3: The token pair (if, iff) is banned — "iff" is not a keyword.
+   Rule PD-4: No two keyword literals share a prefix (verified: all keywords
+              are pairwise non-prefix).
+   Rule PD-5: Single-char operators (=, <, >, !) use lookahead to prefer
+              multi-char forms (==, !=, <=, >=) when applicable. *)
+
+(* -----------------------------------------------------------------------------
+   §10  LEXER ENGINE REQUIREMENTS
+   ----------------------------------------------------------------------------- *)
+
+(* Engine: re2c v3.1
+   Input: NFC-normalized UTF-8 byte stream
+   Output: Token stream with (token_type, lexeme, line, column)
+   Complexity: O(n) time, O(1) auxiliary space per token
+   ReDoS: re2c generates linear-time DFA — no backtracking *)

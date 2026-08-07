@@ -1,6 +1,6 @@
 {
   "name": "lighthouse",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Free offline AI coding agent. No subscription. Works on phones, RPi, anything.",
   "main": "core.js",
   "bin": { "lighthouse": "./core.js" },
@@ -8,9 +8,19 @@
     "start": "node core.js",
     "setup": "node setup.js",
     "release": "node release.js",
+    "assemble": "node assemble.js",
+    "assemble:check": "node assemble.js --check",
     "mobile:build": "node mobile/capacitor/build-mobile.js",
     "deploy": "node deploy.js",
-    "deploy:ship": "node deploy.js ship"
+    "deploy:ship": "node deploy.js ship",
+    "frontier:codegen": "node scripts/frontier-codegen.js",
+    "frontier:mobile": "node scripts/build-frontier-mobile.js",
+    "frontier:server": "node scripts/build-frontier-server.js",
+    "frontier:single": "node scripts/frontier-single-binary.js",
+    "frontier:cross": "node scripts/frontier-cross-compile.js",
+    "frontier:standalone": "node scripts/build-frontier-standalone.js",
+    "frontier:bindings": "node scripts/frontier-ui-bindings.js && node scripts/frontier-ai-bindings.js",
+    "frontier:embed-model": "node scripts/frontier-model-embed.js"
   },
   "dependencies": {
     "express": "^4.21.0"

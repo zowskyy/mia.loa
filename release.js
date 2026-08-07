@@ -58,17 +58,17 @@ const PLATFORMS = {
     includesModel: true, notes: 'For Windows 10/11 64-bit. Includes .bat launcher.'
   },
   'android-arm64': {
-    label: 'Android (ARM64) — Capacitor APK', type: 'mobile', ext: 'apk', os: 'android', arch: 'arm64-v8a',
-    includesModel: false, notes: 'Native Android app via Capacitor. Requires server on same network.'
+    label: 'Android (ARM64) — Frontier Native APK', type: 'mobile', ext: 'apk', os: 'android', arch: 'arm64-v8a',
+    includesModel: false, notes: 'Pure native APK (~3MB). No WebView. Set LIGHTHOUSE_MOBILE=capacitor for legacy build.'
   },
   'android-armv7': {
-    label: 'Android (ARMv7) — Capacitor APK', type: 'mobile', ext: 'apk', os: 'android', arch: 'armeabi-v7a',
+    label: 'Android (ARMv7) — Frontier Native APK', type: 'mobile', ext: 'apk', os: 'android', arch: 'armeabi-v7a',
     includesModel: false, notes: 'For older Android devices. Same universal APK as ARM64 build.',
     aliasOf: 'android-arm64'
   },
   'ios': {
-    label: 'iOS — Xcode Project', type: 'mobile', ext: 'tar.gz', os: 'ios', arch: 'universal',
-    includesModel: false, notes: 'Xcode project for building iOS IPA. Requires macOS with Xcode 15+.'
+    label: 'iOS — Frontier Native Shell', type: 'mobile', ext: 'tar.gz', os: 'ios', arch: 'universal',
+    includesModel: false, notes: 'Xcode shell + libfrontier_app.a. No WebView. Build IPA on macOS.'
   },
   'portable': {
     label: 'Portable (Any Platform, No Model)', type: 'portable', ext: 'zip', os: 'any', arch: 'any',
@@ -90,12 +90,23 @@ const PLATFORMS = {
 
 const CORE_FILES = [
   'core.js', 'setup.js', 'package.json', 'README.md',
-  'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js'
+  'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js', 'assemble.js',
+  'lib/frontier.js', 'lib/frontier-codegen.js', 'lib/frontier-mobile.js',
+  'lib/discovery-engine.js', 'lib/package-registry.js',
+  'scripts/frontier-codegen.js', 'scripts/build-frontier-mobile.js',
+  'scripts/build-frontier-server.js', 'scripts/build-frontier-standalone.js',
+  'scripts/frontier-cross-compile.js', 'scripts/frontier-single-binary.js',
+  'scripts/frontier-http-server.js', 'scripts/frontier-ui-bindings.js',
+  'scripts/frontier-ai-bindings.js', 'scripts/frontier-model-embed.js',
+  'scripts/lib/frontier-utils.js',
+  'scripts/sync-frontier-syntax.sh', 'mobile/build-native.sh'
 ];
 
 const PUBLIC_FILES = [
   'index.html', 'client.js', 'mobile.js', 'mobile.css', 'sw.js', 'manifest.json',
-  'webllm.js', 'webllm-bridge.js', 'connect.html', 'investor.html', 'i18n.js'
+  'webllm.js', 'webllm-bridge.js', 'connect.html', 'investor.html', 'i18n.js',
+  'frontier-parser.js', 'browser-compiler.js', 'download-menu.js',
+  'syntax/token_regex_table.json', 'syntax/README.md'
 ];
 
 const MODEL_FILE = join('models', 'model.gguf');
@@ -386,14 +397,51 @@ function signAndroidApk(unsignedApk, signedApk) {
   return existsSync(signedApk);
 }
 
-async function buildAndroidAPK(platformKey) {
+let androidApkBuilt = null;
+
+const { buildNativeApk, packageIosProject } = require('./lib/frontier-mobile');
+
+function useCapacitorMobile() {
+  return process.env.LIGHTHOUSE_MOBILE === 'capacitor';
+}
+
+async function buildFrontierNativeAndroid(platformKey) {
+  const outputFile = join(RELEASE_DIR, `${NAME}-${VERSION}-${platformKey}.apk`);
+  console.log('     Stack: Frontier native (libfrontier_app.so — no WebView)');
+
+  try {
+    const result = buildNativeApk(outputFile);
+    if (!result.ok) {
+      warn(result.error || 'Frontier native APK build failed');
+      return false;
+    }
+
+    androidApkBuilt = outputFile;
+    const built = await finalizeBuild(platformKey, outputFile, null);
+
+    if (platformKey === 'android-arm64') {
+      const armv7File = join(RELEASE_DIR, `${NAME}-${VERSION}-android-armv7.apk`);
+      copyFileSync(outputFile, armv7File);
+      const armv7Checksum = await generateChecksum(armv7File);
+      writeFileSync(armv7File + '.sha256', armv7Checksum);
+      ok('android-armv7 alias APK created');
+    }
+
+    return built;
+  } catch (e) {
+    warn(`Frontier native APK: ${e.message}`);
+    return false;
+  }
+}
+
+async function buildCapacitorAndroidAPK(platformKey) {
   const platform = PLATFORMS[platformKey];
   if (!platform || platform.type !== 'mobile' || !platformKey.startsWith('android')) return false;
 
   const releaseName = `${NAME}-${VERSION}-${platformKey}`;
   const outputFile = join(RELEASE_DIR, `${releaseName}.apk`);
 
-  console.log(`\n  📱 Building Android APK: ${platform.label}`);
+  console.log(`\n  📱 Building Capacitor Android APK: ${platform.label}`);
   console.log(`     Output: ${basename(outputFile)}`);
 
   const capacitorDir = join(ROOT, 'mobile', 'capacitor');
@@ -504,9 +552,23 @@ async function buildMobile(platformKey) {
   console.log(`     Output: ${basename(outputFile)}`);
 
   const capacitorDir = join(ROOT, 'mobile', 'capacitor');
-  if (!ensureCapacitorDeps(capacitorDir)) return false;
 
   if (platformKey === 'ios') {
+    if (!useCapacitorMobile()) {
+      console.log('     Stack: Frontier native (libfrontier_app.a — no WebView)');
+      try {
+        const result = packageIosProject(outputFile);
+        if (result.ok) {
+          return finalizeBuild(platformKey, outputFile, null);
+        }
+        warn(result.error || 'Frontier iOS package failed');
+      } catch (e) {
+        warn(`Frontier iOS: ${e.message}`);
+      }
+      warn('Falling back to Capacitor WebView iOS project');
+    }
+
+    if (!ensureCapacitorDeps(capacitorDir)) return false;
     if (!existsSync(join(capacitorDir, 'ios'))) {
       console.log('     Adding iOS platform...');
       execSync('npx cap add ios', { cwd: capacitorDir, stdio: 'pipe' });
@@ -526,7 +588,13 @@ async function buildMobile(platformKey) {
   }
 
   if (platformKey.startsWith('android')) {
-    return buildAndroidAPK(platformKey);
+    if (!useCapacitorMobile()) {
+      const native = await buildFrontierNativeAndroid(platformKey);
+      if (native) return native;
+      warn('Falling back to Capacitor WebView APK');
+    }
+    if (!ensureCapacitorDeps(capacitorDir)) return false;
+    return buildCapacitorAndroidAPK(platformKey);
   }
 
   return false;
@@ -648,8 +716,8 @@ async function buildCommunityKit() {
 
   const COPY_ROOT_ITEMS = [
     'core.js', 'setup.js', 'package.json', 'README.md', 'RELEASE_NOTES.md',
-    'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js', 'deploy.sh', 'release.sh',
-    'RELEASE_CHECKLIST.md', 'public', 'mobile', 'models'
+    'lighthouse', 'lighthouse.bat', 'deploy.js', 'release.js', 'assemble.js', 'deploy.sh', 'release.sh',
+    'RELEASE_CHECKLIST.md', 'public', 'mobile', 'models', 'lib', 'frontier', 'registry', 'scripts'
   ];
 
   for (const item of COPY_ROOT_ITEMS) {

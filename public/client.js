@@ -1,5 +1,6 @@
 const API = '/api';
 let busy = false, currentFiles = [], viewedFile = null, currentProject = null;
+window.currentFiles = currentFiles;
 
 async function init() {
   const saved = localStorage.getItem('lighthouse_project');
@@ -8,6 +9,7 @@ async function init() {
   document.getElementById('inp').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   });
+  if (typeof initFrontierParser === 'function') initFrontierParser();
   checkHealth();
   setInterval(checkHealth, 15000);
 }
@@ -84,13 +86,21 @@ async function handleARC(request) {
         try {
           const data = JSON.parse(line.slice(6));
 
-          if (data.stage) {
+          if (data.direct) {
+            addMsg(formatDiscoveryMessage(data), 'agent');
+          }
+
+          if (data.status && typeof data.stage === 'string') {
+            setStage(data.stage,
+              data.status === 'done' ? 'done' :
+              data.status === 'refining' ? 'active' : 'active');
+            if (data.status === 'refining') {
+              addMsg('🔄 Refining code based on review...', 'system');
+            }
+          } else if (data.stage?.stage) {
             setStage(data.stage.stage,
               data.stage.status === 'done' ? 'done' :
               data.stage.status === 'refining' ? 'active' : 'active');
-            if (data.stage.status === 'refining') {
-              addMsg('🔄 Refining code based on review...', 'system');
-            }
           }
 
           if (data.plan?.steps) {
@@ -101,9 +111,10 @@ async function handleARC(request) {
 
           if (data.code?.files) {
             currentFiles = data.code.files;
+            window.currentFiles = currentFiles;
             let html = '<b>💻 Generated Files:</b><br>';
             data.code.files.forEach(f => {
-              html += `<br><b>📄 ${f.path}</b> — ${f.description || ''}<br>`;
+              html += `<br><b>📄 ${f.path}</b>${f.language === 'frontier' ? ' ⚙️ <em>native</em>' : ''} — ${f.description || ''}<br>`;
             });
             const mid = addMsg(html, 'agent');
             const btns = document.createElement('div');
@@ -117,7 +128,7 @@ async function handleARC(request) {
 
               const d = document.createElement('button');
               d.textContent = '⬇️';
-              d.onclick = () => downloadFile(f);
+              d.onclick = () => openDownloadMenuForFile(f);
               btns.appendChild(d);
             });
 
@@ -157,8 +168,18 @@ async function handleIdea(idea) {
   d.questions?.forEach((q, i) => { t += `${i + 1}. ${q}<br>`; });
   t += '<br><em>Answer these and I will build it.</em>';
   addMsg(t, 'agent');
+  if (d.discovery) addMsg(formatDiscoveryMessage(d.discovery), 'agent');
   document.getElementById('inp').value = 'Answers:\n1. ';
   document.getElementById('inp').focus();
+}
+
+function detectFileLanguage(path, content) {
+  if (path.endsWith('.py')) return 'python';
+  if (path.endsWith('.fr')) return 'frontier';
+  if (path.match(/\.(js|mjs|cjs|ts)$/)) return 'javascript';
+  if (/^(def |import )/m.test(content)) return 'python';
+  if (/^(fn|let)\s/m.test(content)) return 'frontier';
+  return 'javascript';
 }
 
 function viewFile(f) {
@@ -166,20 +187,133 @@ function viewFile(f) {
   document.getElementById('codeTitle').textContent = '💻 ' + f.path;
   document.getElementById('codeContent').textContent = f.content;
   document.getElementById('codePanel').classList.add('open');
+  validateCurrentFile();
 }
 
-function downloadFile(f) {
+async function validateCurrentFile() {
+  const badge = document.getElementById('validationBadge');
+  if (!badge || !viewedFile) return;
+
+  badge.textContent = '⏳ validating...';
+  badge.className = 'pending';
+
+  const lang = detectFileLanguage(viewedFile.path, viewedFile.content);
+  let result = { valid: true, mode: 'skipped', errors: [] };
+
+  if (typeof validateFrontierCode === 'function') {
+    result = await validateFrontierCode(viewedFile.content, { language: lang, filename: viewedFile.path });
+  } else {
+    try {
+      const res = await fetch(API + '/frontier/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: viewedFile.content, language: lang, filename: viewedFile.path })
+      });
+      result = await res.json();
+    } catch {}
+  }
+
+  if (result.valid) {
+    badge.textContent = `✅ ${result.mode || 'valid'} (${lang})`;
+    badge.className = 'valid';
+  } else {
+    const msg = result.errors?.[0]?.message || 'syntax error';
+    badge.textContent = `❌ ${msg}`;
+    badge.className = 'invalid';
+    badge.title = result.errors?.map(e => `L${e.line || '?'}: ${e.message}`).join('\n') || '';
+  }
+}
+
+function openDownloadMenuForFile(file) {
+  if (typeof showDownloadMenu === 'function') {
+    showDownloadMenu(file);
+    return;
+  }
+  downloadFile(file);
+}
+
+function openDownloadMenu(e) {
+  e?.stopPropagation?.();
+  if (!viewedFile) {
+    alert('Click a file first to view it, then download.');
+    return;
+  }
+  if (typeof showDownloadMenu === 'function') {
+    showDownloadMenu(viewedFile);
+    return;
+  }
+  downloadAs('javascript');
+}
+
+function downloadFile(f, ext) {
+  const name = f.path.split('/').pop();
+  const base = name.replace(/\.[^.]+$/, '');
+  const filename = ext ? `${base}.${ext}` : name;
   const b = new Blob([f.content], { type: 'text/plain' });
   const u = URL.createObjectURL(b);
   const a = document.createElement('a');
   a.href = u;
-  a.download = f.path.split('/').pop();
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(u);
 }
 
+function downloadAs(format) {
+  if (!viewedFile) {
+    alert('Click a file first to view it, then download.');
+    return;
+  }
+  if (format === 'python' && !viewedFile.path.endsWith('.py')) {
+    const header = '# Generated by Lighthouse — review before running\n';
+    downloadFile({ ...viewedFile, content: header + viewedFile.content }, 'py');
+  } else if (format === 'javascript') {
+    downloadFile(viewedFile, 'js');
+  } else {
+    downloadFile(viewedFile);
+  }
+}
+
+async function compileToNative() {
+  if (!viewedFile) {
+    alert('Click a file first to view it.');
+    return;
+  }
+  if (typeof showDownloadMenu === 'function') {
+    showDownloadMenu(viewedFile);
+    return;
+  }
+  addMsg('⚙️ Compiling to native binary via Frontier...', 'system');
+
+  const lang = detectFileLanguage(viewedFile.path, viewedFile.content);
+  const res = await fetch(API + '/frontier/compile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code: viewedFile.content,
+      filename: viewedFile.path,
+      language: lang
+    })
+  });
+  const d = await res.json();
+
+  if (!d.ok) {
+    addMsg(`⚠️ <b>Native compile:</b> ${d.error}<br><em>${d.hint || d.detail || ''}</em>`, 'system');
+    return;
+  }
+
+  const bytes = Uint8Array.from(atob(d.binary), c => c.charCodeAt(0));
+  const blob = new Blob([bytes], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = d.filename || (viewedFile.path.split('/').pop().replace(/\.[^.]+$/, '') + '-native');
+  a.click();
+  URL.revokeObjectURL(url);
+  addMsg(`✅ Native binary ready (${(d.size / 1024).toFixed(0)} KB) — ${d.compiler}`, 'system');
+}
+
 function downloadCode() {
-  if (viewedFile) downloadFile(viewedFile);
+  if (viewedFile) downloadAs('javascript');
   else alert('Click a file first to view it, then download.');
 }
 
@@ -197,6 +331,46 @@ async function saveProject() {
     body: JSON.stringify({ name: n, files })
   });
   addMsg('✅ Saved!', 'system');
+}
+
+function formatDiscoveryMessage(discovery) {
+  if (!discovery?.direct) return '';
+
+  let html = `<b>✅ ${discovery.direct.summary}</b><br>`;
+  html += `<em>${discovery.direct.whatHappensNext}</em>`;
+
+  if (discovery.direct.desiredOutcome) {
+    html += `<br><br><b>🎯 Success looks like:</b><br>${discovery.direct.desiredOutcome}`;
+  }
+
+  const enablers = discovery.connections?.worthKnowing || [];
+  if (enablers.length) {
+    html += '<br><br><b>While that runs, you might want to know:</b>';
+    enablers.slice(0, 3).forEach(c => {
+      html += `<br><br>📍 <b>${c.what}</b><br>${c.why}`;
+      if (c.howMuchDifference) html += `<br><em>${c.howMuchDifference}</em>`;
+    });
+  }
+
+  const adjacent = discovery.connections?.likelyRelevantNow || [];
+  if (adjacent.length) {
+    html += '<br><br><b>Related possibilities:</b>';
+    adjacent.slice(0, 2).forEach(c => {
+      html += `<br>• <b>${c.what}</b> — ${c.why}`;
+    });
+  }
+
+  if (discovery.stories?.length) {
+    const story = discovery.stories[0];
+    html += `<br><br><b>💡 Someone like you did this:</b><br>`;
+    html += `"${story.who} — ${story.solution} ${story.outcome}"`;
+  }
+
+  if (discovery.principles?.length) {
+    html += `<br><br><em>${discovery.principles[0]}</em>`;
+  }
+
+  return html;
 }
 
 function addMsg(text, role) {

@@ -18,6 +18,12 @@ const {
   statSync, appendFileSync
 } = require('fs');
 const { join, basename, extname } = require('path');
+const { mountFrontierRoutes } = require('./lib/frontier');
+const { attachFrontierToArcResult } = require('./lib/frontier-codegen');
+const { DiscoveryEngine } = require('./lib/discovery-engine');
+const { mountPackageRegistryRoutes } = require('./lib/package-registry');
+
+const discoveryEngine = new DiscoveryEngine();
 
 // ═══════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -327,6 +333,9 @@ async function runARCCycle(request, context = {}, streamCallback = null) {
     if (streamCallback) streamCallback(event, data);
   }
 
+  const discovery = await discoveryEngine.discover(request, context);
+  emit('discovery', discovery);
+
   emit('stage', { stage: 'analysis', status: 'running' });
   const analysisRaw = await generate(
     `Request: ${request}\nFiles: ${(context.files || []).join(', ') || 'none'}\nAnalyze:`,
@@ -349,6 +358,7 @@ async function runARCCycle(request, context = {}, streamCallback = null) {
     ARC_SYSTEM.code
   );
   let code = parseJSON(codeRaw) || { files: [], explanation: codeRaw };
+  attachFrontierToArcResult({ plan, code, analysis, request });
   emit('stage', { stage: 'code', status: 'done', data: code });
 
   emit('stage', { stage: 'review', status: 'running' });
@@ -377,9 +387,9 @@ async function runARCCycle(request, context = {}, streamCallback = null) {
 
   review.loops = loops;
   emit('stage', { stage: 'review', status: 'done', data: review });
-  emit('done', { success: true, code, review, plan, analysis, elapsed: Date.now() - startTime });
+  emit('done', { success: true, code, review, plan, analysis, discovery, elapsed: Date.now() - startTime });
 
-  return { success: true, code, review, plan, analysis, elapsed: Date.now() - startTime };
+  return { success: true, code, review, plan, analysis, discovery, elapsed: Date.now() - startTime };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -418,15 +428,19 @@ function parseJSON(text) {
 // IDEA-TO-PROJECT WORKFLOW
 // ═══════════════════════════════════════════════════════════════
 
-async function exploreIdea(idea) {
+async function exploreIdea(idea, context = {}) {
+  const discovery = await discoveryEngine.discover(idea, context);
   const raw = await generate(
     `A person (maybe not a programmer) has this idea:\n"${idea}"\n\n1. Explain what this project IS in 2-3 simple sentences\n2. Ask 3-4 clarifying questions\n3. Suggest a project name\n4. Be encouraging\n\nOutput as JSON:\n{"explanation":"...","questions":["q1","q2","q3"],"suggestedName":"my-project"}`,
     'Be helpful and encouraging. Output ONLY JSON.'
   );
-  return parseJSON(raw) || {
-    explanation: `This sounds like a project to help with: ${idea}. Let's build it together.`,
-    questions: ['What should it do exactly?', 'Who will use it?', 'What device will it run on?'],
-    suggestedName: 'my-project'
+  return {
+    ...(parseJSON(raw) || {
+      explanation: `This sounds like a project to help with: ${idea}. Let's build it together.`,
+      questions: ['What should it do exactly?', 'Who will use it?', 'What device will it run on?'],
+      suggestedName: 'my-project'
+    }),
+    discovery
   };
 }
 
@@ -437,6 +451,8 @@ async function exploreIdea(idea) {
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(PUBLIC_DIR));
+mountFrontierRoutes(app);
+mountPackageRegistryRoutes(app);
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -447,7 +463,8 @@ app.get('/api/health', (req, res) => {
     uptime: Math.floor((Date.now() - stats.startTime) / 1000),
     requests: stats.requests,
     errors: stats.errors,
-    version: '1.0.1'
+    version: '1.0.1',
+    frontier: require('./lib/frontier').getStatus()
   });
 });
 
@@ -532,11 +549,25 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
+app.post('/api/discover', async (req, res) => {
+  const { request, context = {} } = req.body || {};
+  if (!request || typeof request !== 'string') {
+    return res.status(400).json({ error: 'Missing request' });
+  }
+  try {
+    const discovery = await discoveryEngine.discover(request, context);
+    res.json(discovery);
+  } catch (err) {
+    stats.errors++;
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/idea', async (req, res) => {
   if (!modelReady) return res.status(503).json({ error: 'Model not ready' });
-  const { idea } = req.body;
+  const { idea, context = {} } = req.body;
   try {
-    const result = await exploreIdea(idea);
+    const result = await exploreIdea(idea, context);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

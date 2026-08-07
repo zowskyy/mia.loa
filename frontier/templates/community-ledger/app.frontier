@@ -1,0 +1,80 @@
+// Community Ledger — Lighthouse Community Template
+// Micro-loan and savings group management
+// Generated: 2026-08-05T06:19:14.755Z
+// License: MIT — Free forever
+
+module community_ledger;
+
+import frontier.ui.{Screen, Button, List, TextInput, Card, Navigation};
+import frontier.storage.{Database, Query, Sync};
+import frontier.hardware.{GPS, Camera, Barcode};
+
+type Member = { id: Int, name: String, join_date: String, savings_balance: Float, loan_balance: Float }
+type Loan = { id: Int, member_id: Int, amount: Float, interest_rate: Float, start_date: String, end_date: String, status: String }
+type Payment = { id: Int, loan_id: Int, amount: Float, date: String, method: String }
+type Savings = { id: Int, member_id: Int, amount: Float, date: String, type: String }
+
+fn init_database() -> Result<Database, String> {
+  let db = Database::open("community_ledger.db")?;
+  db.create_table("members", [
+    ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
+    ("data", "TEXT"),
+    ("created_at", "TEXT DEFAULT (datetime('now'))"),
+    ("updated_at", "TEXT DEFAULT (datetime('now'))"),
+  ])?;
+  Ok(db)
+}
+
+fn create(data: String) -> Result<Int, String> {
+  let db = init_database()?;
+  Ok(db.insert("members", data)?)
+}
+
+fn list_all() -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM members ORDER BY created_at DESC")?)
+}
+
+fn search(query: String) -> Result<Vec<String>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM members WHERE data LIKE ?", ["%" + query + "%"])?)
+}
+
+fn get_active_loans(member_id: Int) -> Result<Vec<Loan>, String> {
+  let db = init_database()?;
+  Ok(db.query("SELECT * FROM loans WHERE member_id = ? AND status = 'active'", [member_id])?)
+}
+
+fn payment_schedule() -> Result<(), String> {
+  // Payment schedule
+  Ok(())
+}
+
+fn group_savings() -> Result<(), String> {
+  // Group savings
+  Ok(())
+}
+
+fn transparency_reports() -> Result<(), String> {
+  // Transparency reports
+  Ok(())
+}
+
+fn main() -> void {
+  let screen = Screen::new("Community Ledger");
+  screen.set_icon("💰");
+  let _ = init_database();
+
+  let search_bar = TextInput::new("search");
+  search_bar.set_placeholder("Search...");
+  screen.add_widget(search_bar);
+
+  screen.add_button("add_new", "➕ Add New", "show_add_form");
+
+  let list = List::new("records");
+  for record in list_all().unwrap_or([]) {
+    list.add_card(Card::new(record));
+  }
+  screen.add_list(list);
+  screen.render();
+}

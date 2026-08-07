@@ -1,0 +1,158 @@
+{
+  "name": "Lighthouse Community Registry",
+  "version": "1.0.0",
+  "description": "Free, offline app templates for community use",
+  "baseUrl": "http://localhost:8899/api/packages",
+  "updated": "2026-08-05T06:19:14.797Z",
+  "packages": {
+    "clinic-records": {
+      "name": "clinic-records",
+      "version": "1.0.0",
+      "description": "Patient records and appointment management for rural clinics",
+      "icon": "🏥",
+      "category": "health",
+      "author": "Lighthouse Community",
+      "license": "MIT",
+      "features": [
+        "Patient search",
+        "Visit history",
+        "Prescription tracking",
+        "Privacy-focused"
+      ],
+      "install": "frontier add clinic-records",
+      "lighthouse": "Type: \"Build me a patient records and appointment management for rural clinics\""
+    },
+    "community-ledger": {
+      "name": "community-ledger",
+      "version": "1.0.0",
+      "description": "Micro-loan and savings group management",
+      "icon": "💰",
+      "category": "finance",
+      "author": "Lighthouse Community",
+      "license": "MIT",
+      "features": [
+        "Loan tracking",
+        "Payment schedule",
+        "Group savings",
+        "Transparency reports"
+      ],
+      "install": "frontier add community-ledger",
+      "lighthouse": "Type: \"Build me a micro-loan and savings group management\""
+    },
+    "event-planner": {
+      "name": "event-planner",
+      "version": "1.0.0",
+      "description": "Community event organization and attendance",
+      "icon": "🎉",
+      "category": "community",
+      "author": "Lighthouse Community",
+      "license": "MIT",
+      "features": [
+        "RSVP tracking",
+        "Task assignment",
+        "Budget management",
+        "Reminders"
+      ],
+      "install": "frontier add event-planner",
+      "lighthouse": "Type: \"Build me a community event organization and attendance\""
+    },
+    "field-survey": {
+      "name": "field-survey",
+      "version": "1.0.0",
+      "description": "Offline data collection for community surveys",
+      "icon": "📋",
+      "category": "research",
+      "author": "Lighthouse Community",
+      "license": "MIT",
+      "features": [
+        "Custom forms",
+        "GPS tagging",
+        "Photo attachments",
+        "CSV export"
+      ],
+      "install": "frontier add field-survey",
+      "lighthouse": "Type: \"Build me a offline data collection for community surveys\""
+    },
+    "inventory-manager": {
+      "name": "inventory-manager",
+      "version": "1.0.0",
+      "description": "Stock tracking for small shops and cooperatives",
+      "icon": "📦",
+      "category": "business",
+      "author": "Lighthouse Community",
+      "license": "MIT",
+      "features": [
+        "Barcode scanning",
+        "Low stock alerts",
+        "Sales reports",
+        "Supplier management"
+      ],
+      "install": "frontier add inventory-manager",
+      "lighthouse": "Type: \"Build me a stock tracking for small shops and cooperatives\""
+    },
+    "market-prices": {
+      "name": "market-prices",
+      "version": "1.0.0",
+      "description": "Crop price comparison and market finder for farmers",
+      "icon": "🌾",
+      "category": "agriculture",
+      "author": "Lighthouse Community",
+      "license": "MIT",
+      "features": [
+        "Price comparison",
+        "Market locator",
+        "Price history",
+        "Offline caching"
+      ],
+      "install": "frontier add market-prices",
+      "lighthouse": "Type: \"Build me a crop price comparison and market finder for farmers\""
+    },
+    "school-attendance": {
+      "name": "school-attendance",
+      "version": "1.0.0",
+      "description": "Student attendance and grade tracking for village schools",
+      "icon": "📚",
+      "category": "education",
+      "author": "Lighthouse Community",
+      "license": "MIT",
+      "features": [
+        "QR check-in",
+        "Attendance reports",
+        "Grade tracking",
+        "Parent notifications"
+      ],
+      "install": "frontier add school-attendance",
+      "lighthouse": "Type: \"Build me a student attendance and grade tracking for village schools\""
+    },
+    "water-tracker": {
+      "name": "water-tracker",
+      "version": "1.0.0",
+      "description": "Water pump maintenance and repair tracking",
+      "icon": "🚰",
+      "category": "infrastructure",
+      "author": "Lighthouse Community",
+      "license": "MIT",
+      "features": [
+        "GPS tracking",
+        "Photo capture",
+        "Service scheduling",
+        "Offline storage"
+      ],
+      "install": "frontier add water-tracker",
+      "lighthouse": "Type: \"Build me a water pump maintenance and repair tracking\""
+    }
+  },
+  "stats": {
+    "total": 8,
+    "categories": {
+      "health": 1,
+      "finance": 1,
+      "community": 1,
+      "research": 1,
+      "business": 1,
+      "agriculture": 1,
+      "education": 1,
+      "infrastructure": 1
+    }
+  }
+}

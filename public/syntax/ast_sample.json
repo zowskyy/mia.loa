@@ -1,0 +1,118 @@
+{
+  "statements": [
+    {
+      "type": "fn_decl",
+      "name": "main",
+      "params": [],
+      "return_type": {
+        "base": "void",
+        "annotation": "none"
+      },
+      "body": [
+        {
+          "type": "let_decl",
+          "name": "x",
+          "type_spec": {
+            "base": "int",
+            "annotation": "none"
+          },
+          "value": {
+            "type": "integer_literal",
+            "value": 10
+          }
+        },
+        {
+          "type": "let_decl",
+          "name": "y",
+          "type_spec": {
+            "base": "int",
+            "annotation": "none"
+          },
+          "value": {
+            "type": "integer_literal",
+            "value": 20
+          }
+        },
+        {
+          "type": "let_decl",
+          "name": "z",
+          "type_spec": {
+            "base": "int",
+            "annotation": "none"
+          },
+          "value": {
+            "type": "binary_expr",
+            "operator": "+",
+            "left": {
+              "type": "identifier",
+              "name": "x"
+            },
+            "right": {
+              "type": "binary_expr",
+              "operator": "*",
+              "left": {
+                "type": "identifier",
+                "name": "y"
+              },
+              "right": {
+                "type": "integer_literal",
+                "value": 2
+              }
+            }
+          }
+        },
+        {
+          "type": "if",
+          "condition": {
+            "type": "binary_expr",
+            "operator": ">",
+            "left": {
+              "type": "identifier",
+              "name": "z"
+            },
+            "right": {
+              "type": "integer_literal",
+              "value": 25
+            }
+          },
+          "then_block": [
+            {
+              "type": "let_decl",
+              "name": "msg",
+              "type_spec": {
+                "base": "string",
+                "annotation": "none"
+              },
+              "value": {
+                "type": "string_literal",
+                "value": "big"
+              }
+            },
+            {
+              "type": "return",
+              "value": null
+            }
+          ],
+          "else_block": [
+            {
+              "type": "let_decl",
+              "name": "msg",
+              "type_spec": {
+                "base": "string",
+                "annotation": "none"
+              },
+              "value": {
+                "type": "string_literal",
+                "value": "small"
+              }
+            },
+            {
+              "type": "return",
+              "value": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
